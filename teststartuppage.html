@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="CCSICTLOGOCROP.png">
+    <title>CENTRANOUNCEIT DEPTHUB - Department Announcement System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'en,tl',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'g': '#9FE870',
+                        'gd': '#8AD95E',
+                        'gf': '#163300',
+                        'gm': '#2A5500',
+                    },
+                    fontFamily: {
+                        poppins: ['Poppins', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* ── CSS Variables: light default, dark on body.dark ── */
+        :root {
+            --bg:           #ffffff;
+            --bg2:          #f5f5f5;
+            --bg-card:      #ffffff;
+            --bg-header:    #ffffff;
+            --bg-footer:    #333333;
+            --text:         #333333;
+            --text2:        #666666;
+            --text-muted:   #999999;
+            --text-footer:  #ffffff;
+            --text-footer2: #cccccc;
+            --border:       #e0e0e0;
+            --accent:       #9FE870;
+            --accent2:      #8AD95E;
+            --accent-dark:  #2A5500;
+            --shadow-sm:    0 2px 10px rgba(0,0,0,0.05);
+            --shadow-md:    0 4px 20px rgba(0,0,0,0.05);
+            --shadow-lg:    0 8px 30px rgba(0,0,0,0.1);
+            --shadow-card:  0 8px 30px rgba(159,232,112,0.2);
+            --shadow-btn:   rgba(159,232,112,0.3);
+            --shadow-btnH:  rgba(159,232,112,0.4);
+        }
+        body.dark {
+            --bg:           #1a1a1a;
+            --bg2:          #2a2a2a;
+            --bg-card:      #242424;
+            --bg-header:    #242424;
+            --bg-footer:    #1a1a1a;
+            --text:         #e0e0e0;
+            --text2:        #b0b0b0;
+            --text-muted:   #808080;
+            --text-footer:  #e0e0e0;
+            --text-footer2: #b0b0b0;
+            --border:       #404040;
+            --accent:       #9FE870;
+            --accent2:      #8AD95E;
+            --accent-dark:  #9FE870;
+            --shadow-sm:    0 2px 10px rgba(0,0,0,0.3);
+            --shadow-md:    0 4px 20px rgba(0,0,0,0.4);
+            --shadow-lg:    0 8px 30px rgba(0,0,0,0.5);
+            --shadow-card:  0 8px 30px rgba(159,232,112,0.3);
+            --shadow-btn:   rgba(159,232,112,0.4);
+            --shadow-btnH:  rgba(159,232,112,0.5);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* ── Header ── */
+        header {
+            background-color: var(--bg-header);
+            box-shadow: var(--shadow-sm);
+            position: sticky; top: 0; z-index: 100;
+            transition: background-color 0.3s;
+        }
+
+        /* ── Nav links ── */
+        .nav-link { color: var(--text2); text-decoration: none; font-weight: 500; transition: color 0.3s; }
+        .nav-link:hover { color: var(--accent); }
+
+        /* ── Login button ── */
+        .login-btn {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+            color: #000;
+            padding: 0.75rem 2rem;
+            border-radius: 12px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px var(--shadow-btn);
+            display: inline-block;
+        }
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px var(--shadow-btnH); }
+
+        /* ── Theme toggle ── */
+        .theme-btn {
+            background: none;
+            border: 2px solid var(--border);
+            color: var(--text);
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .theme-btn:hover {
+            background-color: var(--bg2);
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: rotate(20deg);
+        }
+        .theme-btn:active { transform: scale(0.95) rotate(20deg); }
+        .theme-btn:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(159,232,112,0.3); }
+
+        /* ── Primary button ── */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+            color: #000;
+            padding: 1rem 2.5rem;
+            border-radius: 12px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px var(--shadow-btn);
+            display: inline-block;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px var(--shadow-btnH); }
+
+        /* ── Secondary button ── */
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text);
+            padding: 1rem 2.5rem;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+        .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* ── Features section bg ── */
+        .features-section { background-color: var(--bg2); }
+
+        /* ── Feature card ── */
+        .feature-card {
+            background: var(--bg-card);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s;
+        }
+        .feature-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-card); }
+
+        /* ── About section ── */
+        .about-section { background-color: var(--bg); }
+
+        /* ── About card ── */
+        .about-card {
+            background: var(--bg2);
+            padding: 2rem;
+            border-radius: 16px;
+            border-left: 4px solid var(--accent);
+        }
+        .about-card h3 { color: var(--accent-dark); font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; }
+        .about-card p { color: var(--text2); line-height: 1.7; }
+
+        /* ── Mission/Vision box ── */
+        .mv-box {
+            background: linear-gradient(135deg, rgba(159,232,112,0.1) 0%, rgba(138,217,94,0.1) 100%);
+            padding: 3rem;
+            border-radius: 20px;
+            margin-top: 3rem;
+        }
+
+        /* ── Dev card ── */
+        .dev-card {
+            background: var(--bg-card);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: var(--shadow-md);
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .dev-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-card); }
+
+        /* ── Doc card ── */
+        .doc-card {
+            background: var(--bg2);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            border-left: 4px solid var(--accent);
+        }
+
+        /* ── Contact form ── */
+        .contact-form { background: var(--bg2); padding: 2.5rem; border-radius: 16px; margin-top: 2rem; }
+        .form-input {
+            width: 100%;
+            padding: 0.875rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            background-color: var(--bg);
+            color: var(--text);
+            transition: border-color 0.3s;
+            outline: none;
+        }
+        .form-input:focus { border-color: var(--accent); }
+        .form-label { display: block; font-weight: 600; color: var(--text); margin-bottom: 0.5rem; }
+        .submit-btn {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+            color: #000;
+            padding: 1rem 2.5rem;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px var(--shadow-btn);
+        }
+        .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px var(--shadow-btnH); }
+
+        /* ── Footer ── */
+        footer {
+            background-color: var(--bg-footer);
+            color: var(--text-footer);
+            padding: 3rem 2rem;
+            transition: background-color 0.3s;
+        }
+        .footer-link { color: var(--text-footer2); text-decoration: none; line-height: 1.8; display: block; transition: color 0.3s; }
+        .footer-link:hover { color: var(--accent); }
+        .footer-p { color: var(--text-footer2); line-height: 1.8; }
+
+        /* ── Page content sections ── */
+        .page-content { display: none; max-width: 900px; margin: 0 auto; padding: 5rem 2rem; }
+        .page-content.active { display: block; }
+        .page-content h2 { font-size: 2.5rem; font-weight: 800; color: var(--text); margin-bottom: 1rem; }
+        .page-content h3 { font-size: 1.75rem; font-weight: 700; color: var(--accent-dark); margin-top: 2.5rem; margin-bottom: 1rem; }
+        .page-content h4 { font-size: 1.25rem; font-weight: 600; color: var(--text); margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        .page-content p { color: var(--text2); line-height: 1.8; margin-bottom: 1.5rem; }
+        .page-content ul, .page-content ol { color: var(--text2); line-height: 1.8; margin-bottom: 1.5rem; padding-left: 2rem; }
+        .page-content li { margin-bottom: 0.5rem; }
+
+        /* ── Mobile menu ── */
+        @media (max-width: 968px) {
+            .nav-links {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: 100%; left: 0; right: 0;
+                background-color: var(--bg-header);
+                padding: 2rem;
+                box-shadow: var(--shadow-md);
+                gap: 1.5rem;
+                align-items: flex-start;
+                z-index: 99;
+            }
+            .nav-links.open { display: flex; }
+            .nav-links a { width: 100%; padding: 0.5rem 0; }
+            .nav-links .login-btn { width: 100%; text-align: center; }
+            .mobile-btn { display: block !important; }
+        }
+        @media (max-width: 640px) {
+            .hero-grid { grid-template-columns: 1fr !important; }
+            .hero-btns { flex-direction: column; }
+            .hero-btns a { width: 100%; text-align: center; }
+            .mv-box { padding: 2rem; }
+        }
+
+        /* ── Google Translate banner suppression ── */
+        .goog-te-banner-frame,
+        .goog-te-banner-frame.skiptranslate,
+        .skiptranslate > iframe,
+        #goog-gt-tt,
+        .goog-te-balloon-frame { display: none !important; visibility: hidden !important; height: 0 !important; }
+        body { top: 0 !important; position: static !important; }
+        body.translated-ltr, body.translated-rtl { top: 0 !important; margin-top: 0 !important; }
+        .goog-te-gadget { font-family: 'Poppins', sans-serif !important; font-size: 0.85rem !important; line-height: 1 !important; }
+        .goog-te-gadget-simple { background-color: transparent !important; border: none !important; padding: 4px !important; }
+        .goog-te-gadget-simple .goog-te-menu-value,
+        .goog-te-gadget-simple .goog-te-menu-value span,
+        .goog-te-gadget-simple span { color: var(--text) !important; font-weight: 600 !important; }
+        .goog-te-gadget-icon { display: none !important; }
+        /* Force native select readable */
+        #google_translate_element select,
+        .goog-te-combo {
+            background-color: var(--bg2) !important;
+            color: var(--text) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 8px !important;
+            padding: 6px 10px !important;
+            font-family: 'Poppins', sans-serif !important;
+            font-size: 0.85rem !important;
+            font-weight: 600 !important;
+            outline: none !important;
+            cursor: pointer !important;
+        }
+        #google_translate_element select option,
+        .goog-te-combo option {
+            background-color: var(--bg2) !important;
+            color: var(--text) !important;
+        }
+
+        /* ── Translate dropdown bubble ── */
+        .translate-dropdown {
+            position: fixed;
+            bottom: 90px; right: 30px;
+            background: var(--bg-card);
+            border: 2px solid var(--accent);
+            border-radius: 12px;
+            padding: 8px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            z-index: 998;
+            animation: tdSlideUp 0.3s ease;
+        }
+        @keyframes tdSlideUp {
+            from { opacity:0; transform:translateY(10px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+
+        /* ── Section/page titles ── */
+        .section-title { text-align: center; font-size: 2.5rem; font-weight: 800; color: var(--text); margin-bottom: 1rem; }
+        .section-subtitle { text-align: center; font-size: 1.125rem; color: var(--text2); margin-bottom: 3rem; max-width: 800px; margin-left: auto; margin-right: auto; }
+
+        /* ── Hero image shadow ── */
+        .hero-img { border-radius: 24px; box-shadow: var(--shadow-lg); width: 100%; }
+
+        /* ── Logo badge ── */
+        .logo-badge {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+            color: #000;
+            padding: 6px 12px;
+            border-radius: 10px;
+            margin-left: 4px;
+            box-shadow: 0 4px 12px rgba(159,232,112,0.3);
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        /* ── Feature icon circle ── */
+        .feature-icon {
+            width: 70px; height: 70px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+            border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg2); }
+        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+    <!-- ══════════════════════════════════════
+         HEADER
+    ══════════════════════════════════════ -->
+    <header>
+        <nav class="nav-container" style="max-width:1200px; margin:0 auto; padding:1rem 2rem; display:flex; justify-content:space-between; align-items:center;">
+
+            <!-- Logo -->
+            <a href="#" class="flex items-center gap-3 text-2xl font-extrabold no-underline" style="color:var(--text);" onclick="showHome(); return false;">
+                <i class="fas fa-database" style="color:var(--accent); font-size:2rem;"></i>
+                <span>CENTRANOUNCEIT</span>
+                <span class="logo-badge">DEPTHUB</span>
+            </a>
+
+            <!-- Desktop nav links -->
+            <div class="nav-links flex gap-8 items-center" style="gap:2rem;">
+                <a href="#features" class="nav-link" onclick="showHome(); return false;">Features</a>
+                <a href="#about"    class="nav-link" onclick="showHome(); return false;">About</a>
+                <a href="#contact"  class="nav-link" onclick="showHome(); return false;">Contact</a>
+                <button id="theme-toggle" class="theme-btn" aria-label="Toggle dark mode">
+                    <i class="fas fa-moon" id="theme-icon"></i>
+                </button>
+                <a href="notify_Me.html" class="login-btn">NotifyMe!</a>
+            </div>
+
+            <!-- Mobile hamburger -->
+            <button class="mobile-btn" id="mobileMenuBtn" style="display:none; background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text);">
+                <i class="fas fa-bars" id="mobileIcon"></i>
+            </button>
+        </nav>
+    </header>
+
+    <!-- ══════════════════════════════════════
+         TRANSLATE BUTTON (fixed)
+    ══════════════════════════════════════ -->
+    <button id="translate-toggle-btn"
+        class="notranslate"
+        style="position:fixed; bottom:30px; right:30px; z-index:999; width:50px; height:50px; border-radius:50%; background:var(--accent); border:2px solid var(--accent); color:#000; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:1.3rem; box-shadow:0 4px 12px rgba(159,232,112,0.4); transition:all 0.3s;"
+        translate="no" aria-label="Toggle translation"
+        onmouseover="this.style.boxShadow='0 6px 20px rgba(159,232,112,0.6)';this.style.transform='translateY(-3px)';"
+        onmouseout="this.style.boxShadow='0 4px 12px rgba(159,232,112,0.4)';this.style.transform='';">
+        <i class="fas fa-language"></i>
+    </button>
+    <div id="google_translate_element" class="notranslate translate-dropdown" translate="no" style="display:none;"></div>
+
+    <!-- ══════════════════════════════════════
+         MAIN HOME CONTENT
+    ══════════════════════════════════════ -->
+    <div id="main-content">
+
+        <!-- Hero -->
+        <section class="hero-grid" style="max-width:1200px; margin:0 auto; padding:4rem 2rem; display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:center;">
+            <div>
+                <h1 style="font-size:3rem; font-weight:800; color:var(--text); margin-bottom:1.5rem; line-height:1.2;">
+                    A Department Centralized Announcement <span style="color:var(--accent);">System</span>
+                </h1>
+                <p style="font-size:1.125rem; color:var(--text2); margin-bottom:2rem; line-height:1.6;">
+                    A unified platform designed to streamline communication across all departments ensuring every announcement, update, and alert reaches the right people at the right time.
+                </p>
+                <div class="hero-btns" style="display:flex; gap:1rem; flex-wrap:wrap;">
+                    <a href="faculty_login.html" class="btn-primary">Faculty Log in</a>
+                    <a href="student_Dashboard.html" class="btn-secondary">Student</a>
+                    <a href="signup.html" class="btn-secondary">Sign Up</a>
+                </div>
+            </div>
+            <div>
+                <img class="hero-img"
+                     src="https://dqtictujkhxultwoaqaw.supabase.co/storage/v1/object/public/Avatar/Untitled%20design.png"
+                     alt="Dashboard Preview">
+            </div>
+        </section>
+
+        <!-- Features -->
+        <section class="features-section" id="features" style="padding:5rem 2rem;">
+            <div style="max-width:1200px; margin:0 auto;">
+                <h2 class="section-title">Powerful Features</h2>
+                <p class="section-subtitle">Everything you need to manage departmental announcements effectively.</p>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:2rem;">
+
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-shield-alt" style="font-size:2rem; color:#000;"></i></div>
+                        <h3 style="font-size:1.5rem; font-weight:700; color:var(--text); margin-bottom:1rem;">Secure Access</h3>
+                        <p style="color:var(--text2); line-height:1.6;">Ensure only authorized users can access the system with OTP-secured authentication.</p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-tachometer-alt" style="font-size:2rem; color:#000;"></i></div>
+                        <h3 style="font-size:1.5rem; font-weight:700; color:var(--text); margin-bottom:1rem;">Real-time Update</h3>
+                        <p style="color:var(--text2); line-height:1.6;">Stay informed with instant notifications as announcements are posted and updated.</p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-paint-brush" style="font-size:2rem; color:#000;"></i></div>
+                        <h3 style="font-size:1.5rem; font-weight:700; color:var(--text); margin-bottom:1rem;">User-Friendly Design</h3>
+                        <p style="color:var(--text2); line-height:1.6;">Navigate and interact effortlessly with an intuitive, easy-to-use interface designed for everyone.</p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-camera" style="font-size:2rem; color:#000;"></i></div>
+                        <h3 style="font-size:1.5rem; font-weight:700; color:var(--text); margin-bottom:1rem;">OCR Form Auto-Filling</h3>
+                        <p style="color:var(--text2); line-height:1.6;">Automatically capture and fill out forms using OCR technology — just snap a photo and let the system handle the rest.</p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-search" style="font-size:2rem; color:#000;"></i></div>
+                        <h3 style="font-size:1.5rem; font-weight:700; color:var(--text); margin-bottom:1rem;">Powerful Search</h3>
+                        <p style="color:var(--text2); line-height:1.6;">Retrieve announcements in just a second with fast and intelligent search and sorting features.</p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-mobile-alt" style="font-size:2rem; color:#000;"></i></div>
+                        <h3 style="font-size:1.5rem; font-weight:700; color:var(--text); margin-bottom:1rem;">Responsive Design</h3>
+                        <p style="color:var(--text2); line-height:1.6;">Access and manage your database from any device with our mobile-friendly interface.</p>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- About -->
+        <section class="about-section" id="about" style="padding:5rem 2rem;">
+            <div style="max-width:1000px; margin:0 auto;">
+                <h2 class="section-title">About Us</h2>
+                <p class="section-subtitle">
+                    CENTRANOUNCEIT DEPTHUB is a centralized platform created to revolutionize how departments manage and deliver critical updates, news, and alerts. Our mission is to bridge departmental gaps and enable efficient, real-time communication across all organizational levels.
+                </p>
+
+                <!-- Mission & Vision -->
+                <div class="mv-box">
+                    <h3 style="font-size:1.75rem; font-weight:700; color:var(--text); margin-bottom:1.5rem; text-align:center;">Our Mission &amp; Vision</h3>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:2rem; margin-top:2rem;">
+                        <div style="text-align:center;">
+                            <i class="fas fa-bullseye" style="font-size:3rem; color:var(--accent); margin-bottom:1rem; display:block;"></i>
+                            <h4 style="font-size:1.25rem; font-weight:700; color:var(--text); margin-bottom:0.75rem;">Our Mission</h4>
+                            <p style="color:var(--text2); line-height:1.6;">To empower organizations with seamless, secure, and efficient communication tools that ensure every announcement reaches the right audience at the right time.</p>
+                        </div>
+                        <div style="text-align:center;">
+                            <i class="fas fa-eye" style="font-size:3rem; color:var(--accent); margin-bottom:1rem; display:block;"></i>
+                            <h4 style="font-size:1.25rem; font-weight:700; color:var(--text); margin-bottom:0.75rem;">Our Vision</h4>
+                            <p style="color:var(--text2); line-height:1.6;">To become the leading centralized announcement platform that transforms departmental communication and collaboration across educational institutions and organizations worldwide.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- About cards -->
+                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:3rem; margin-top:3rem;">
+                    <div class="about-card"><h3>Who We Are</h3><p>We are a team of dedicated developers and communication specialists committed to solving the challenges of fragmented information flow. Our platform is built with modern technology and user-centered design principles.</p></div>
+                    <div class="about-card"><h3>Why Choose Us</h3><p>We combine fast performance, robust security, advanced features like OCR form auto-filling, and instant notifications—all in one reliable, modern solution tailored for growing organizations and educational institutions.</p></div>
+                    <div class="about-card"><h3>What We Offer</h3><p>A comprehensive platform that centralizes announcements, streamlines workflows, enhances security with OTP authentication, and provides powerful search and real-time updates to keep everyone connected and informed.</p></div>
+                </div>
+
+                <!-- Dev Team -->
+                <div style="margin-top:4rem;">
+                    <h3 style="font-size:2rem; font-weight:700; color:var(--text); margin-bottom:2rem; text-align:center;">Meet Our Development Team</h3>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:2.5rem; margin-top:2rem;">
+
+                        <div class="dev-card">
+                            <img src="https://dqtictujkhxultwoaqaw.supabase.co/storage/v1/object/public/Avatar/public/3-1760788623123"
+                                 alt="Ahron"
+                                 style="width:120px; height:120px; border-radius:50%; object-fit:cover; margin:0 auto 1.5rem; display:block;">
+                            <h4 style="font-size:1.5rem; font-weight:700; color:var(--text); margin-bottom:0.5rem;">Ahron John Barlis</h4>
+                            <p style="color:var(--accent); font-weight:600; margin-bottom:1rem; font-size:1.1rem;">Lead Developer</p>
+                            <p style="color:var(--text2); line-height:1.6; font-size:0.95rem;">Leads our engineering team and technical vision. A full-stack expert specializing in scalable web applications and database architecture, passionate about creating user-centric solutions.</p>
+                        </div>
+
+                        <div class="dev-card">
+                            <img src="https://dqtictujkhxultwoaqaw.supabase.co/storage/v1/object/public/Avatar/2_1760857610912.jpg"
+                                 alt="Christian"
+                                 style="width:120px; height:120px; border-radius:50%; object-fit:cover; margin:0 auto 1.5rem; display:block;">
+                            <h4 style="font-size:1.5rem; font-weight:700; color:var(--text); margin-bottom:0.5rem;">Christian Paul Simbulan</h4>
+                            <p style="color:var(--accent); font-weight:600; margin-bottom:1rem; font-size:1.1rem;">Frontend/Backend Developer</p>
+                            <p style="color:var(--text2); line-height:1.6; font-size:0.95rem;">Expert in bridging the gap between design and functionality. Crafts beautiful, responsive, and accessible user interfaces powered by robust and secure backend logic.</p>
+                        </div>
+
+                        <div class="dev-card">
+                            <img src="https://dqtictujkhxultwoaqaw.supabase.co/storage/v1/object/public/Avatar/Screenshot%202025-11-09%20012543.png"
+                                 alt="Juztin"
+                                 style="width:120px; height:120px; border-radius:50%; object-fit:cover; margin:0 auto 1.5rem; display:block;">
+                            <h4 style="font-size:1.5rem; font-weight:700; color:var(--text); margin-bottom:0.5rem;">Juztin Maltizo</h4>
+                            <p style="color:var(--accent); font-weight:600; margin-bottom:1rem; font-size:1.1rem;">Documentation</p>
+                            <p style="color:var(--text2); line-height:1.6; font-size:0.95rem;">Specializes in translating complex technical concepts into clear, concise, and accessible documentation. Manages our knowledge base, API references, and user guides.</p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div><!-- /#main-content -->
+
+    <!-- ══════════════════════════════════════
+         DOCUMENTATION PAGE
+    ══════════════════════════════════════ -->
+    <div id="documentation-page" class="page-content">
+        <h2>Documentation</h2>
+        <p>Welcome to the CENTRANOUNCEIT DEPTHUB documentation. This guide will help you understand and use all features of our platform effectively.</p>
+        <div class="doc-card"><h3>Getting Started</h3><h4>1. Account Setup</h4><p>To begin using CENTRANOUNCEIT DEPTHUB, administrators need to:</p><ul><li>Navigate to the admin login page</li><li>Enter your registered email address</li><li>Receive and enter the OTP (One-Time Password) sent to your email</li><li>Complete the verification process</li></ul><h4>2. Dashboard Overview</h4><p>Once logged in, you'll have access to:</p><ul><li><strong>Announcement Manager:</strong> Create, edit, and delete announcements</li><li><strong>User Management:</strong> Manage member accounts and permissions</li><li><strong>Analytics:</strong> View announcement reach and engagement metrics</li><li><strong>Settings:</strong> Configure system preferences and notifications</li></ul></div>
+        <div class="doc-card"><h3>Creating Announcements</h3><h4>Standard Announcement</h4><ol><li>Click the "New Announcement" button</li><li>Fill in the title, description, and category</li><li>Set priority level (Normal, Important, Urgent)</li><li>Select target audience or departments</li><li>Add attachments if needed</li><li>Preview and publish</li></ol><h4>OCR Form Auto-Fill</h4><p>Our OCR feature allows you to quickly create announcements from physical documents:</p><ol><li>Click "Create from Image"</li><li>Upload or capture a photo of the document</li><li>Wait for OCR processing (usually 2-5 seconds)</li><li>Review and edit the extracted information</li><li>Publish the announcement</li></ol></div>
+        <div class="doc-card"><h3>Search &amp; Filtering</h3><p>Find announcements quickly using our powerful search features:</p><ul><li><strong>Keyword Search:</strong> Search by title, content, or tags</li><li><strong>Date Range:</strong> Filter by specific time periods</li><li><strong>Category Filter:</strong> View announcements by department or type</li><li><strong>Priority Level:</strong> Sort by urgency</li><li><strong>Status:</strong> Filter active, archived, or scheduled announcements</li></ul></div>
+        <div class="doc-card"><h3>Security Features</h3><h4>OTP Authentication</h4><p>All members and admin access is protected by One-Time Password authentication:</p><ul><li>OTP codes are valid for 10 minutes</li><li>Codes are sent to your registered email</li><li>Maximum 5 login attempts before temporary lockout</li><li>Sessions expire after 5 minutes of inactivity</li></ul><h4>Data Protection</h4><ul><li>All data is encrypted in transit and at rest</li><li>Regular automated backups</li><li>Role-based access control</li><li>Audit logs for all administrative actions</li></ul></div>
+        <div class="doc-card"><h3>Mobile Access</h3><p>Access CENTRANOUNCEIT DEPTHUB on any device:</p><ul><li>Fully responsive design for phones and tablets</li><li>Touch-optimized interface</li><li>Offline viewing of cached announcements</li><li>Push notifications for urgent updates</li></ul></div>
+        <div class="doc-card"><h3>Troubleshooting</h3><h4>Common Issues</h4><p><strong>Not receiving OTP codes?</strong></p><ul><li>Check your spam/junk folder</li><li>Verify your email address is correct</li><li>Wait 2-3 minutes for delivery</li><li>Request a new code if expired</li></ul><p><strong>Unable to upload images for OCR?</strong></p><ul><li>Ensure image is less than 5MB</li><li>Supported formats: JPG, PNG, PDF</li><li>Use clear, well-lit photos</li><li>Avoid blurry or skewed images</li></ul></div>
+        <p style="margin-top:3rem;"><strong>Need more help?</strong> Contact our support team at <a href="#" onclick="showContactPage(); return false;" style="color:var(--accent); text-decoration:underline;"><span class="__cf_email__" data-cfemail="6f0c0e021f1a1c0e0101001a010c0a020a011b5a5b5c5d5e2f08020e0603410c0002">[email&#160;protected]</span></a></p>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         HELP PAGE
+    ══════════════════════════════════════ -->
+    <div id="help-page" class="page-content">
+        <h2>Help Center</h2>
+        <p>Find quick answers to common questions and learn how to make the most of CENTRANOUNCEIT DEPTHUB.</p>
+        <div class="doc-card"><h3>Frequently Asked Questions</h3><h4>General Questions</h4><p><strong>Q: What is CENTRANOUNCEIT DEPTHUB?</strong></p><p>A: CENTRANOUNCEIT DEPTHUB is a centralized announcement management system designed to streamline communication across departments. It allows administrators to create, manage, and distribute announcements efficiently while providing members with easy access to important updates.</p><p><strong>Q: Who can use this platform?</strong></p><p>A: The platform is designed for educational institutions, organizations, and businesses that need to manage departmental communications. Administrators create and manage content, while members can view and search announcements.</p><p><strong>Q: Is my data secure?</strong></p><p>A: Yes, we use industry-standard encryption, OTP authentication, and regular security audits to protect your data. All communications are encrypted, and we never share your information with third parties.</p></div>
+        <div class="doc-card"><h3>Account &amp; Access</h3><p><strong>Q: How do I log in as an administrator?</strong></p><p>A: Click "Admin Login" in the navigation menu, enter your registered email, and complete the OTP verification sent to your email. The OTP is valid for 10 minutes.</p><p><strong>Q: I forgot my password. What should I do?</strong></p><p>A: Our system uses OTP-based authentication, so you don't need to remember a password. Simply enter your registered email, and you'll receive a new OTP code to access your account.</p><p><strong>Q: Can I have multiple administrators?</strong></p><p>A: Yes, you can add multiple administrator accounts with different permission levels. Contact support to set up additional admin accounts.</p><p><strong>Q: How long does my session last?</strong></p><p>A: Admin sessions remain active for 24 hours of inactivity. After that, you'll need to log in again for security purposes.</p></div>
+        <div class="doc-card"><h3>Managing Announcements</h3><p><strong>Q: How do I create a new announcement?</strong></p><p>A: From your admin dashboard, click "New Announcement," fill in the required fields (title, description, category), set the priority level, select your target audience, and click "Publish."</p><p><strong>Q: Can I schedule announcements for later?</strong></p><p>A: Yes, when creating an announcement, you can select a future date and time for automatic publication.</p><p><strong>Q: How does the OCR feature work?</strong></p><p>A: Upload a clear photo of a physical document, and our OCR technology will extract text automatically. You can then review, edit, and publish the content as an announcement.</p><p><strong>Q: Can I edit or delete published announcements?</strong></p><p>A: Yes, administrators can edit or delete any announcement at any time. However, editing history is logged for transparency.</p></div>
+        <div class="doc-card"><h3>Getting More Help</h3><p>If you can't find the answer to your question:</p><ul><li>Check our <a href="#" onclick="showDocPage(); return false;" style="color:var(--accent); text-decoration:underline;">Documentation</a> for detailed guides</li><li><a href="#" onclick="showContactPage(); return false;" style="color:var(--accent); text-decoration:underline;">Contact our support team</a> for personalized assistance</li><li>Email us at <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="45262428353036242b2b2a302b262028202b317071767774052228242c296b262a28">[email&#160;protected]</a></li><li>Call +63 (125) 933-5023 for urgent issues</li></ul></div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         CONTACT PAGE
+    ══════════════════════════════════════ -->
+    <div id="contact-page" class="page-content">
+        <h2>Contact Us</h2>
+        <p>Have questions or need support? We're here to help! Reach out to us using the form below or through our contact information.</p>
+        <div class="doc-card"><h3>Get In Touch</h3><p><strong>Email:</strong> <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="2043414d505553414e4e4f554e43454d454e54151413121160474d41494c0e434f4d">[email&#160;protected]</a></p><p><strong>Phone:</strong> +63 (125) 933-5023</p><p><strong>Support Hours:</strong> 24/7 - We're always available to assist you</p><p><strong>Response Time:</strong> We typically respond within 24 hours on business days</p></div>
+        <h3 style="margin-top:3rem; font-size:1.75rem; font-weight:700; color:var(--accent-dark);">Send Us A Message</h3>
+        <form class="contact-form" onsubmit="handleContactForm(event)">
+            <div style="margin-bottom:1.5rem;"><label class="form-label" for="contact-name">Full Name *</label><input class="form-input" type="text" id="contact-name" name="name" required placeholder="Enter your full name"></div>
+            <div style="margin-bottom:1.5rem;"><label class="form-label" for="contact-email">Email Address *</label><input class="form-input" type="email" id="contact-email" name="email" required placeholder="your.email@example.com"></div>
+            <div style="margin-bottom:1.5rem;"><label class="form-label" for="contact-phone">Phone Number</label><input class="form-input" type="tel" id="contact-phone" name="phone" placeholder="+63 XXX XXX XXXX"></div>
+            <div style="margin-bottom:1.5rem;"><label class="form-label" for="contact-subject">Subject *</label><input class="form-input" type="text" id="contact-subject" name="subject" required placeholder="What can we help you with?"></div>
+            <div style="margin-bottom:1.5rem;"><label class="form-label" for="contact-message">Message *</label><textarea class="form-input" id="contact-message" name="message" required placeholder="Please describe your question or issue in detail..." style="resize:vertical; min-height:150px;"></textarea></div>
+            <button type="submit" class="submit-btn">Send Message</button>
+        </form>
+        <div class="doc-card" style="margin-top:3rem;"><h3>Other Ways To Reach Us</h3><p><strong>Technical Support:</strong> For urgent technical issues, please call our support line directly.</p><p><strong>General Inquiries:</strong> For general questions about our platform, email us and we'll respond promptly.</p><p><strong>Feature Requests:</strong> We love hearing your ideas! Let us know what features you'd like to see.</p><p><strong>Bug Reports:</strong> Found a bug? Please report it with as much detail as possible so we can fix it quickly.</p></div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         PRIVACY PAGE
+    ══════════════════════════════════════ -->
+    <div id="privacy-page" class="page-content">
+        <h2>Privacy Policy</h2>
+        <p><strong>Last Updated:</strong> November 9, 2025</p>
+        <p>CENTRANOUNCEIT DEPTHUB ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform.</p>
+        <div class="doc-card"><h3>1. Information We Collect</h3><h4>Personal Information</h4><p>We collect information that you voluntarily provide to us when you register for an account, create or interact with announcements, contact our support team, or use our services.</p><h4>Automatically Collected Information</h4><p>When you access our platform, we automatically collect device information, IP address, usage data, and cookies.</p><h4>OCR and Uploaded Content</h4><p>When you use our OCR feature, we process the images you upload to extract text. These images are temporarily stored for processing and deleted after 30 days.</p></div>
+        <div class="doc-card"><h3>2. How We Use Your Information</h3><p>We use the information we collect to provide, maintain, and improve our services, process transactions, authenticate identity, respond to inquiries, send updates, monitor usage, and comply with legal obligations.</p></div>
+        <div class="doc-card"><h3>3. Data Security</h3><p>We implement appropriate technical and organizational measures including encryption, OTP-based authentication, regular security audits, access controls, and secure data storage. However, no method of transmission over the internet is 100% secure.</p></div>
+        <div class="doc-card"><h3>4. Contact Us</h3><p><strong>Email:</strong> <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="4b282a263b3e382a2525243e25282e262e253f7e7f78797a0b2c262a222765282426">[email&#160;protected]</a></p><p><strong>Phone:</strong> +63 (125) 933-5023</p></div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         TERMS PAGE
+    ══════════════════════════════════════ -->
+    <div id="terms-page" class="page-content">
+        <h2>Terms of Service</h2>
+        <p><strong>Last Updated:</strong> November 9, 2025</p>
+        <p>Please read these Terms of Service carefully before using CENTRANOUNCEIT DEPTHUB.</p>
+        <div class="doc-card"><h3>1. Acceptance of Terms</h3><p>By accessing or using the Service, you agree to be bound by these Terms. If you disagree with any part of the Terms, you may not access the Service.</p></div>
+        <div class="doc-card"><h3>2. Description of Service</h3><p>CENTRANOUNCEIT DEPTHUB is a centralized announcement management platform enabling organizations to create, manage, and distribute announcements with OCR support, search, filtering, and user access management.</p></div>
+        <div class="doc-card"><h3>3. User Responsibilities</h3><p>You agree not to use the Service for illegal purposes, post false content, impersonate others, upload malicious code, or attempt unauthorized access.</p></div>
+        <div class="doc-card"><h3>4. Governing Law</h3><p>These Terms shall be governed by and construed in accordance with the laws of the Philippines.</p></div>
+        <div class="doc-card"><h3>5. Contact Information</h3><p><strong>Email:</strong> <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="284b4945585d5b494646475d464b4d454d465c1d1c1b1a19684f45494144064b4745">[email&#160;protected]</a></p><p><strong>Phone:</strong> +63 (125) 933-5023</p></div>
+        <p style="margin-top:3rem; font-weight:600;">By using CENTRANOUNCEIT DEPTHUB, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.</p>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         FOOTER
+    ══════════════════════════════════════ -->
+    <footer id="contact">
+        <div style="max-width:1200px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:3rem;">
+            <div>
+                <h4 style="font-size:1.25rem; font-weight:700; margin-bottom:1rem; color:var(--accent);">CENTRANOUNCEIT DEPTHUB</h4>
+                <p class="footer-p">Professional centralized announcement system for modern departments and organizations.</p>
+            </div>
+            <div>
+                <h4 style="font-size:1.25rem; font-weight:700; margin-bottom:1rem; color:var(--accent);">Quick Links</h4>
+                <a href="#features" class="footer-link" onclick="showHome(); return false;">Features</a>
+                <a href="#about"    class="footer-link" onclick="showHome(); return false;">About Us</a>
+                <a href="admin_Access.html" class="footer-link">Admin Login</a>
+                <a href="#" class="footer-link" onclick="showDocPage(); return false;">Documentation</a>
+            </div>
+            <div>
+                <h4 style="font-size:1.25rem; font-weight:700; margin-bottom:1rem; color:var(--accent);">Support</h4>
+                <a href="#" class="footer-link" onclick="showHelpPage(); return false;">Help Center</a>
+                <a href="#" class="footer-link" onclick="showContactPage(); return false;">Contact Us</a>
+                <a href="#" class="footer-link" onclick="showPrivacyPage(); return false;">Privacy Policy</a>
+                <a href="#" class="footer-link" onclick="showTermsPage(); return false;">Terms of Service</a>
+            </div>
+            <div>
+                <h4 style="font-size:1.25rem; font-weight:700; margin-bottom:1rem; color:var(--accent);">Contact</h4>
+                <p class="footer-p">Email: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="7d1e1c100d080e1c13131208131e181018130948494e4f4c3d1a101c1411531e1210">[email&#160;protected]</a></p>
+                <p class="footer-p">Phone: +63 (125) 933-5023</p>
+            </div>
+        </div>
+        <div style="max-width:1200px; margin:2rem auto 0; padding-top:2rem; border-top:1px solid var(--border); text-align:center; color:var(--text-muted);">
+            <p>&copy; 2025 CENTRANOUNCEIT DEPTHUB. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- ══════════════════════════════════════
+         SCRIPTS
+    ══════════════════════════════════════ -->
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+        // ── Page navigation ──
+        function hideAllPages() {
+            document.getElementById('main-content').style.display = 'none';
+            ['documentation-page','help-page','contact-page','privacy-page','terms-page'].forEach(id => {
+                document.getElementById(id).classList.remove('active');
+            });
+        }
+        function showHome()        { hideAllPages(); document.getElementById('main-content').style.display = 'block'; window.scrollTo(0,0); }
+        function showDocPage()     { hideAllPages(); document.getElementById('documentation-page').classList.add('active'); window.scrollTo(0,0); }
+        function showHelpPage()    { hideAllPages(); document.getElementById('help-page').classList.add('active'); window.scrollTo(0,0); }
+        function showContactPage() { hideAllPages(); document.getElementById('contact-page').classList.add('active'); window.scrollTo(0,0); }
+        function showPrivacyPage() { hideAllPages(); document.getElementById('privacy-page').classList.add('active'); window.scrollTo(0,0); }
+        function showTermsPage()   { hideAllPages(); document.getElementById('terms-page').classList.add('active'); window.scrollTo(0,0); }
+
+        // ── Contact form ──
+        function handleContactForm(event) {
+            event.preventDefault();
+            alert('Thank you for your message! We will get back to you within 24 hours.');
+            event.target.reset();
+        }
+
+        // ── Smooth scroll ──
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+                if (href.startsWith('#') && href.length > 1) {
+                    e.preventDefault();
+                    if (['#features','#about','#contact'].includes(href)) showHome();
+                    setTimeout(() => {
+                        const target = document.querySelector(href);
+                        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 50);
+                }
+            });
+        });
+
+        // ── Mobile menu ──
+        const mobileBtn  = document.getElementById('mobileMenuBtn');
+        const mobileIcon = document.getElementById('mobileIcon');
+        const navLinks   = document.querySelector('.nav-links');
+        const navAnchors = navLinks.querySelectorAll('a');
+
+        mobileBtn.addEventListener('click', () => {
+            navLinks.classList.toggle('open');
+            const open = navLinks.classList.contains('open');
+            mobileIcon.className = open ? 'fas fa-times' : 'fas fa-bars';
+        });
+
+        navAnchors.forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 968 && navLinks.classList.contains('open')) {
+                    navLinks.classList.remove('open');
+                    mobileIcon.className = 'fas fa-bars';
+                }
+            });
+        });
+
+        document.addEventListener('click', e => {
+            if (!e.target.closest('nav') && navLinks.classList.contains('open')) {
+                navLinks.classList.remove('open');
+                mobileIcon.className = 'fas fa-bars';
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 968) {
+                navLinks.classList.remove('open');
+                mobileIcon.className = 'fas fa-bars';
+                navLinks.removeAttribute('style');
+            }
+        });
+
+        // ── Theme ──
+        function initTheme() {
+            const saved = localStorage.getItem('theme') || 'light';
+            applyTheme(saved);
+        }
+
+        function applyTheme(theme) {
+            const icon = document.getElementById('theme-icon');
+            if (theme === 'dark') {
+                document.body.classList.add('dark');
+                if (icon) { icon.classList.remove('fa-moon'); icon.classList.add('fa-sun'); }
+            } else {
+                document.body.classList.remove('dark');
+                if (icon) { icon.classList.remove('fa-sun'); icon.classList.add('fa-moon'); }
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = document.body.classList.contains('dark');
+            const next = isDark ? 'light' : 'dark';
+            localStorage.setItem('theme', next);
+            applyTheme(next);
+            setTimeout(applyTranslateColors, 50);
+        }
+
+        // ── Google Translate color fix ──
+        function getThemeColors() {
+            const isDark = document.body.classList.contains('dark');
+            return {
+                text:   isDark ? '#e0e0e0' : '#333333',
+                bg:     isDark ? '#2a2a2a' : '#f5f5f5',
+                border: isDark ? '#404040' : '#e0e0e0',
+            };
+        }
+
+        function applyTranslateColors() {
+            const dropdown = document.getElementById('google_translate_element');
+            if (!dropdown) return;
+            const { text, bg, border } = getThemeColors();
+            const combo = dropdown.querySelector('.goog-te-combo, select');
+            if (combo) {
+                combo.style.setProperty('color', text, 'important');
+                combo.style.setProperty('background-color', bg, 'important');
+                combo.style.setProperty('border', `1px solid ${border}`, 'important');
+                combo.style.setProperty('border-radius', '8px', 'important');
+                combo.style.setProperty('padding', '6px 10px', 'important');
+                combo.style.setProperty('font-weight', '600', 'important');
+                combo.style.setProperty('font-family', 'Poppins, sans-serif', 'important');
+                combo.style.setProperty('font-size', '0.85rem', 'important');
+                combo.style.setProperty('outline', 'none', 'important');
+                combo.style.setProperty('cursor', 'pointer', 'important');
+                combo.querySelectorAll('option').forEach(opt => {
+                    opt.style.setProperty('color', text, 'important');
+                    opt.style.setProperty('background-color', bg, 'important');
+                });
+            }
+            dropdown.querySelectorAll('span, a, .goog-te-menu-value, .goog-te-menu-value span').forEach(el => {
+                el.style.setProperty('color', text, 'important');
+            });
+        }
+
+        // ── Translate toggle ──
+        function initTranslationToggle() {
+            const btn      = document.getElementById('translate-toggle-btn');
+            const dropdown = document.getElementById('google_translate_element');
+            if (!btn || !dropdown) return;
+
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                const isVisible = dropdown.style.display === 'block';
+                dropdown.style.display = isVisible ? 'none' : 'block';
+                if (!isVisible) applyTranslateColors();
+            });
+
+            document.addEventListener('click', e => {
+                if (!e.target.closest('#translate-toggle-btn') && !e.target.closest('#google_translate_element')) {
+                    dropdown.style.display = 'none';
+                }
+            });
+
+            // Re-apply on theme toggle
+            document.getElementById('theme-toggle').addEventListener('click', () => {
+                setTimeout(applyTranslateColors, 50);
+            });
+
+            // Watch for Google Translate injecting its widget DOM
+            const observer = new MutationObserver(applyTranslateColors);
+            observer.observe(dropdown, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+
+            // Poll for 10s after load
+            let tries = 0;
+            const poll = setInterval(() => {
+                applyTranslateColors();
+                if (++tries >= 20) clearInterval(poll);
+            }, 500);
+
+            // Suppress the Google Translate top banner
+            suppressTranslateBanner();
+        }
+
+        function suppressTranslateBanner() {
+            function hideBanner() {
+                document.querySelectorAll('.goog-te-banner-frame, .skiptranslate > iframe, #goog-gt-tt, .goog-te-balloon-frame').forEach(el => {
+                    el.style.setProperty('display', 'none', 'important');
+                    el.style.setProperty('height', '0', 'important');
+                    el.style.setProperty('visibility', 'hidden', 'important');
+                });
+                if (document.body.style.top && document.body.style.top !== '0px') {
+                    document.body.style.setProperty('top', '0', 'important');
+                    document.body.style.setProperty('margin-top', '0', 'important');
+                }
+            }
+            new MutationObserver(hideBanner).observe(document.body, { attributes: true, attributeFilter: ['style', 'class'], childList: true });
+            new MutationObserver(hideBanner).observe(document.head, { childList: true });
+            hideBanner();
+        }
+
+        // ── Init ──
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            initTranslationToggle();
+            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="CCSICTLOGOCROP.png">
+    <title>Faculty Dashboard - CentraNounceIT DeptHub</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="keys.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Google Translate (once only) -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en', includedLanguages: 'en,tl',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: {} }
+        }
+    </script>
+
+    <style>
+        /* ── CSS Variables: light default, dark on body.dark-mode ── */
+        :root {
+            --bg:          #f5faf2;
+            --surface:     #ffffff;
+            --card:        #e8f5e0;
+            --border:      #c9e5ba;
+            --text:        #163300;
+            --text-muted:  #2d5514;
+            --hover:       #e8f5e0;
+            --accent:      #7acc50;
+            --accent-hi:   #9FE870;
+            --search-bg:   #e8f5e0;
+            --shadow-g:    rgba(122,204,80,0.2);
+        }
+        body.dark-mode {
+            --bg:          #000000;
+            --surface:     #0f0f0f;
+            --card:        #1a1a1a;
+            --border:      #2d5514;
+            --text:        #ffffff;
+            --text-muted:  #b8d6a0;
+            --hover:       #1a1a1a;
+            --accent:      #9FE870;
+            --accent-hi:   #9FE870;
+            --search-bg:   #1a1a1a;
+            --shadow-g:    rgba(159,232,112,0.2);
+        }
+
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            transition: background-color .3s, color .3s;
+        }
+
+        /* ── Banner category backgrounds ── */
+        #main-content.all-announcement .news-banner { background: linear-gradient(135deg,#1a2a0f,#0f1a07); color:#9FE870; }
+        #main-content.emergency .news-banner         { background: linear-gradient(135deg,#D32F2F,#b71c1c); color:#fff; }
+        #main-content.deadline .news-banner          { background: linear-gradient(135deg,#9FE870,#7acc50); color:#000 !important; }
+        #main-content.news .news-banner              { background: linear-gradient(135deg,#1a2a0f,#0f1a07); color:#9FE870; }
+        #main-content.memo .news-banner              { background: linear-gradient(135deg,#2d5514,#163300); color:#9FE870; }
+        #main-content.notices .news-banner           { background: linear-gradient(135deg,#7acc50,#9FE870); color:#000 !important; }
+        body.dark-mode #main-content.all-announcement .news-banner { background: linear-gradient(135deg,#1a2a0f,#0f1a07); }
+        body.dark-mode #main-content.news .news-banner             { background: linear-gradient(135deg,#1a2a0f,#0f1a07); }
+
+        /* ── Card top-bar accent on hover ── */
+        .news-card::before { content:''; position:absolute; top:0; left:0; width:100%; height:4px; background:linear-gradient(90deg,var(--accent),var(--accent-hi)); transform:scaleX(0); transition:transform .3s; }
+        .news-card:hover::before { transform:scaleX(1); }
+
+        /* ── Highlight text ── */
+        .highlight-text { background:rgba(159,232,112,.25); color:var(--text); padding:2px 6px; border-radius:4px; font-weight:600; }
+
+        /* ── Voice mic animation ── */
+        .listening { color:#ff4444 !important; animation:pulseMic 1.5s infinite; }
+        @keyframes pulseMic { 0%{transform:translateY(-50%) scale(1)} 50%{transform:translateY(-50%) scale(1.2)} 100%{transform:translateY(-50%) scale(1)} }
+
+        /* ── Filter panel show/hide ── */
+        .filter-panel { display:none; }
+        .filter-panel.active { display:block; animation:slideDown .3s ease; }
+        @keyframes slideDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+
+        /* ── Modal ── */
+        .modal { display:none; }
+        .modal.active { display:flex; animation:fadeIn .3s ease; }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        @keyframes slideUpModal { from{transform:translateY(30px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+        /* ── Chatbot loading dots (Alpine.js controls display) ── */
+        .chatbot-loading-dot { width:6px; height:6px; border-radius:50%; background:#9FE870; animation:bounce 1.4s infinite ease-in-out both; }
+        .chatbot-loading-dot:nth-child(1){animation-delay:-.32s;}
+        .chatbot-loading-dot:nth-child(2){animation-delay:-.16s;}
+        @keyframes bounce { 0%,80%,100%{transform:scale(0)} 40%{transform:scale(1)} }
+        [x-cloak] { display:none !important; }
+
+        /* ── Pulse for banner icon ── */
+        @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+        .pulse-icon { animation:pulse 2s ease-in-out infinite; }
+
+        /* ── Google Translate banner suppression ── */
+        .goog-te-banner-frame,
+        .goog-te-banner-frame.skiptranslate,
+        .skiptranslate > iframe,
+        #goog-gt-tt,
+        .goog-te-balloon-frame { display:none !important; visibility:hidden !important; height:0 !important; }
+        body { top:0 !important; position:static !important; }
+        body.translated-ltr, body.translated-rtl { top:0 !important; margin-top:0 !important; }
+
+        /* ── Google Translate widget styling ── */
+        .goog-te-gadget { font-family:'Inter',sans-serif !important; font-size:.85rem !important; line-height:1 !important; }
+        .goog-te-gadget-simple { background-color:var(--card) !important; border:1px solid var(--border) !important; border-radius:8px !important; padding:6px 10px !important; }
+        .goog-te-gadget-simple .goog-te-menu-value,
+        .goog-te-gadget-simple .goog-te-menu-value span,
+        .goog-te-gadget-simple span,
+        .goog-te-gadget-simple a { color:var(--text) !important; font-weight:600 !important; background:none !important; }
+        .goog-te-gadget-icon { display:none !important; }
+        #google_translate_element select, .goog-te-combo {
+            background-color:var(--card) !important; color:var(--text) !important;
+            border:1px solid var(--border) !important; border-radius:8px !important;
+            padding:6px 10px !important; font-family:'Inter',sans-serif !important;
+            font-size:.85rem !important; font-weight:600 !important; outline:none !important; cursor:pointer !important;
+        }
+        #google_translate_element select option, .goog-te-combo option {
+            background-color:var(--card) !important; color:var(--text) !important;
+        }
+
+        /* ── Translate dropdown bubble ── */
+        .translate-dropdown {
+            position:fixed; bottom:90px; right:30px;
+            background:var(--surface); border:2px solid var(--accent);
+            border-radius:12px; padding:8px;
+            box-shadow:0 8px 20px rgba(0,0,0,.2); z-index:998;
+        }
+
+        /* ── Profile dropdown ── */
+        .profile-dropdown { display:none; position:absolute; right:0; top:120%; min-width:180px; border-radius:16px; overflow:hidden; animation:slideDown .3s ease; z-index:1000; background:var(--surface); border:1px solid var(--border); box-shadow:0 12px 30px var(--shadow-g); }
+        .profile-dropdown.show { display:block; }
+        .profile-dropdown a { display:block; padding:12px 16px; color:var(--text-muted); text-decoration:none; transition:all .3s; font-size:.9rem; }
+        .profile-dropdown a:hover { background:var(--hover); color:var(--accent); padding-left:20px; }
+
+        /* ── Form inputs use CSS vars ── */
+        .form-input {
+            width:100%; padding:12px; border-radius:12px;
+            border:1px solid var(--border);
+            background-color:var(--search-bg);
+            color:var(--text);
+            font-family:'Inter',sans-serif; font-size:.95rem;
+            transition:all .3s;
+            outline:none;
+        }
+        .form-input:focus { border-color:var(--accent); background-color:var(--surface); box-shadow:0 0 0 4px rgba(159,232,112,.2); }
+        .form-input::placeholder { color:var(--text-muted); }
+        textarea.form-input { resize:vertical; min-height:100px; }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width:6px; }
+        ::-webkit-scrollbar-track { background:var(--bg); }
+        ::-webkit-scrollbar-thumb { background:var(--accent); border-radius:3px; }
+    </style>
+</head>
+
+<body class="light-mode min-h-screen p-5">
+
+    <!-- ══════════ HEADER ══════════ -->
+    <header class="flex justify-between items-center flex-wrap gap-5 mb-10 pb-5" style="border-bottom:2px solid var(--border);">
+
+        <!-- Logo -->
+        <div class="flex items-center gap-3 px-5 py-3 rounded-2xl cursor-pointer border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(159,232,112,.2)]"
+             style="background:linear-gradient(135deg,var(--surface),var(--hover)); border-color:var(--border);"
+             onclick="showCategory('all-announcement')">
+            <img src="CCSICTLOGOCROP.png" alt="Logo" class="w-12 h-12 rounded-xl transition-transform duration-300 hover:rotate-6 hover:scale-105">
+            <span class="font-bold text-xl tracking-tight" style="color:var(--text);">
+                CentraNounceIT
+                <span class="bg-gradient-to-br from-[#9FE870] to-[#7acc50] text-black px-3 py-1.5 rounded-[10px] ml-1 shadow-[0_4px_12px_rgba(159,232,112,.3)] font-bold">DeptHub</span>
+            </span>
+        </div>
+
+        <!-- Nav -->
+        <nav class="flex gap-5 items-center">
+            <a href="#" onclick="event.preventDefault();handleLogout();"
+               class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[.95rem] font-medium no-underline transition-all duration-300 hover:-translate-y-0.5"
+               style="color:var(--text-muted);" onmouseover="this.style.color='var(--accent)';this.style.background='var(--hover)';" onmouseout="this.style.color='var(--text-muted)';this.style.background='transparent';">
+                <i class="fas fa-sign-out-alt"></i> Log out
+            </a>
+            <a href="faculty_Calendar.html"
+               class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[.95rem] font-medium no-underline transition-all duration-300 hover:-translate-y-0.5"
+               style="color:var(--text-muted);" onmouseover="this.style.color='var(--accent)';this.style.background='var(--hover)';" onmouseout="this.style.color='var(--text-muted)';this.style.background='transparent';">
+                <i class="fas fa-calendar"></i> Calendar
+            </a>
+        </nav>
+
+        <!-- Actions -->
+        <div class="flex items-center gap-4 flex-wrap">
+            <!-- Theme toggle -->
+            <button onclick="toggleTheme()" id="theme-toggle-btn"
+                class="px-4 py-2.5 rounded-xl cursor-pointer text-base font-medium flex items-center gap-2 border transition-all duration-300 hover:-translate-y-0.5"
+                style="background:linear-gradient(135deg,var(--surface),var(--hover)); color:var(--text); border-color:var(--border);"
+                onmouseover="this.style.background='linear-gradient(135deg,#9FE870,#7acc50)';this.style.color='#000';this.style.borderColor='#9FE870';"
+                onmouseout="this.style.background='linear-gradient(135deg,var(--surface),var(--hover))';this.style.color='var(--text)';this.style.borderColor='var(--border)';">
+                <i class="fas fa-sun" id="theme-icon"></i>
+            </button>
+
+            <!-- Stay logged in -->
+            <div class="flex items-center gap-2 px-3 py-2 rounded-xl border text-[.85rem]" style="background:var(--surface); border-color:var(--border); color:var(--text-muted);">
+                <input type="checkbox" id="disableAutoLogout" onchange="toggleAutoLogout()" class="cursor-pointer w-4 h-4">
+                <label for="disableAutoLogout" class="cursor-pointer select-none whitespace-nowrap">Stay Logged In</label>
+            </div>
+
+            <!-- Upload button -->
+            <a href="upload_Ocr.html"
+               class="px-4 py-2.5 rounded-xl font-semibold text-[.95rem] text-black no-underline transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(159,232,112,.3)]"
+               style="background:linear-gradient(135deg,var(--accent-hi),var(--accent)); box-shadow:0 4px 12px rgba(159,232,112,.3);">
+                <i class="fas fa-upload mr-1"></i> Upload
+            </a>
+
+            <!-- Search -->
+            <div class="relative">
+                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-lg" style="color:var(--text-muted);"></i>
+                <input type="text" id="searchInput" placeholder="Search..."
+                    oninput="searchAnnouncements()"
+                    class="pl-11 pr-20 py-3 rounded-xl w-[280px] outline-none text-[.95rem] border transition-all duration-300 focus:w-[320px] focus:shadow-[0_0_0_4px_rgba(159,232,112,.2)]"
+                    style="background:var(--search-bg); color:var(--text); border-color:var(--border);"
+                    onfocus="this.style.borderColor='var(--accent)';this.style.background='var(--surface)';"
+                    onblur="this.style.borderColor='var(--border)';this.style.background='var(--search-bg)';">
+                <i class="fas fa-times absolute right-12 top-1/2 -translate-y-1/2 cursor-pointer text-lg transition-all hidden"
+                   id="clearSearch" onclick="clearSearch()" style="color:var(--text-muted);"></i>
+                <i class="fas fa-microphone absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-lg transition-all"
+                   id="voiceSearchBtn" onclick="startVoiceSearch()" style="color:var(--text-muted);"></i>
+            </div>
+        </div>
+
+        <!-- Profile -->
+        <div class="relative flex items-center gap-2.5 cursor-pointer px-3 py-1.5 pl-1.5 rounded-[25px] border transition-all duration-300"
+             id="profile-container"
+             style="border-color:var(--border);"
+             onmouseover="this.style.background='var(--hover)';this.style.borderColor='var(--accent)';"
+             onmouseout="this.style.background='transparent';this.style.borderColor='var(--border)';">
+            <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" alt="Avatar" id="profile-avatar"
+                 class="w-[35px] h-[35px] rounded-full object-cover border-2" style="border-color:var(--accent);">
+            <span id="profile-name" class="font-medium text-[.9rem]" style="color:var(--text);">Loading...</span>
+            <div class="profile-dropdown" id="profile-dropdown-content">
+                <a href="#" onclick="event.preventDefault();openEditProfileModal();">Edit Profile</a>
+                <a href="#" onclick="event.preventDefault();handleLogout();">Log Out</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- ══════════ MAIN CONTENT ══════════ -->
+    <main id="main-content" class="all-announcement">
+
+        <!-- Banner -->
+        <div class="news-banner flex items-center gap-4 px-8 py-5 rounded-2xl mb-8 shadow-[0_4px_20px_rgba(0,0,0,.1)] transition-all duration-300">
+            <i class="fas fa-bullhorn text-[2.2rem] pulse-icon"></i>
+            <h1 id="page-title" class="text-3xl font-bold tracking-tight">All Announcements</h1>
+            <span id="searchBadge" class="hidden inline-block text-black px-[18px] py-2 rounded-2xl text-[.85rem] ml-4 font-semibold shadow-[0_4px_12px_rgba(159,232,112,.3)]"
+                  style="background:linear-gradient(135deg,var(--accent-hi),var(--accent));"></span>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="flex justify-between items-center px-6 py-4 rounded-2xl mb-8 shadow-sm flex-wrap gap-3 border transition-colors duration-300"
+             style="background:var(--surface); border-color:var(--border);">
+            <div class="flex items-center gap-3 flex-wrap" id="filter-categories">
+                <a href="#" class="filter-link px-4 py-2 rounded-[10px] text-[.9rem] font-medium no-underline transition-all duration-200 hover:-translate-y-0.5 active-filter text-black font-semibold shadow-[0_4px_12px_rgba(159,232,112,.3)]"
+                   style="background:linear-gradient(135deg,var(--accent-hi),var(--accent));"
+                   data-category="all-announcement" onclick="event.preventDefault();showCategory('all-announcement')">All Announcement</a>
+                <a href="#" class="filter-link px-4 py-2 rounded-[10px] text-[.9rem] font-medium no-underline transition-all duration-200 hover:-translate-y-0.5"
+                   style="color:var(--text-muted);"
+                   data-category="Emergency" onclick="event.preventDefault();showCategory('Emergency')">Emergency</a>
+                <a href="#" class="filter-link px-4 py-2 rounded-[10px] text-[.9rem] font-medium no-underline transition-all duration-200 hover:-translate-y-0.5"
+                   style="color:var(--text-muted);"
+                   data-category="Deadline" onclick="event.preventDefault();showCategory('Deadline')">Deadline</a>
+                <a href="#" class="filter-link px-4 py-2 rounded-[10px] text-[.9rem] font-medium no-underline transition-all duration-200 hover:-translate-y-0.5"
+                   style="color:var(--text-muted);"
+                   data-category="Memo" onclick="event.preventDefault();showCategory('Memo')">Memo</a>
+                <a href="#" class="filter-link px-4 py-2 rounded-[10px] text-[.9rem] font-medium no-underline transition-all duration-200 hover:-translate-y-0.5"
+                   style="color:var(--text-muted);"
+                   data-category="Notices" onclick="event.preventDefault();showCategory('Notices')">Notices</a>
+            </div>
+            <div class="flex items-center gap-2 cursor-pointer px-4 py-2 rounded-[10px] transition-all duration-300"
+                 style="color:var(--text-muted);"
+                 onmouseover="this.style.color='var(--accent)';this.style.background='var(--hover)';"
+                 onmouseout="this.style.color='var(--text-muted)';this.style.background='transparent';"
+                 onclick="toggleFilterPanel()">
+                <i class="fas fa-sliders-h text-lg"></i>
+                <span class="font-medium">Filters</span>
+            </div>
+        </div>
+
+        <!-- Filter panel -->
+        <div class="filter-panel border rounded-2xl p-6 mb-8 transition-colors duration-300" id="filterPanel"
+             style="background:var(--surface); border-color:var(--border);">
+            <div class="mb-5">
+                <div class="text-xs font-bold uppercase tracking-wide mb-3" style="color:var(--text-muted);">SORT BY DATE POSTED</div>
+                <div class="flex flex-wrap gap-2">
+                    <button class="filter-option active px-4 py-2 rounded-[10px] border text-[.85rem] font-semibold cursor-pointer text-black shadow-[0_4px_12px_rgba(159,232,112,.3)]"
+                            style="background:linear-gradient(135deg,var(--accent-hi),var(--accent)); border-color:var(--accent);"
+                            data-sort="posted-newest" onclick="setSortOrder('posted-newest')">Newest to Oldest</button>
+                    <button class="filter-option px-4 py-2 rounded-[10px] border text-[.85rem] font-medium cursor-pointer transition-all duration-300"
+                            style="color:var(--text-muted); border-color:var(--border); background:var(--card);"
+                            data-sort="posted-oldest" onclick="setSortOrder('posted-oldest')">Oldest to Newest</button>
+                </div>
+            </div>
+            <div class="mb-5">
+                <div class="text-xs font-bold uppercase tracking-wide mb-3" style="color:var(--text-muted);">SORT BY SCHEDULED DATE</div>
+                <div class="flex flex-wrap gap-2">
+                    <button class="filter-option px-4 py-2 rounded-[10px] border text-[.85rem] font-medium cursor-pointer transition-all duration-300"
+                            style="color:var(--text-muted); border-color:var(--border); background:var(--card);"
+                            data-sort="scheduled-newest" onclick="setSortOrder('scheduled-newest')">Newest to Oldest</button>
+                    <button class="filter-option px-4 py-2 rounded-[10px] border text-[.85rem] font-medium cursor-pointer transition-all duration-300"
+                            style="color:var(--text-muted); border-color:var(--border); background:var(--card);"
+                            data-sort="scheduled-oldest" onclick="setSortOrder('scheduled-oldest')">Oldest to Newest</button>
+                </div>
+            </div>
+            <div>
+                <div class="text-xs font-bold uppercase tracking-wide mb-3" style="color:var(--text-muted);">SORT BY TARGET AUDIENCE</div>
+                <div class="flex flex-wrap gap-2">
+                    <button class="filter-option px-4 py-2 rounded-[10px] border text-[.85rem] font-medium cursor-pointer transition-all duration-300"
+                            style="color:var(--text-muted); border-color:var(--border); background:var(--card);"
+                            data-sort="audience-all" onclick="setSortOrder('audience-all')">All</button>
+                    <button class="filter-option px-4 py-2 rounded-[10px] border text-[.85rem] font-medium cursor-pointer transition-all duration-300"
+                            style="color:var(--text-muted); border-color:var(--border); background:var(--card);"
+                            data-sort="audience-students" onclick="setSortOrder('audience-students')">Students</button>
+                    <button class="filter-option px-4 py-2 rounded-[10px] border text-[.85rem] font-medium cursor-pointer transition-all duration-300"
+                            style="color:var(--text-muted); border-color:var(--border); background:var(--card);"
+                            data-sort="audience-faculty" onclick="setSortOrder('audience-faculty')">Faculty</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- News grid -->
+        <div class="grid grid-cols-[repeat(auto-fit,minmax(340px,1fr))] gap-6" id="newsGrid">
+            <div class="text-center py-16 text-lg col-span-full" style="color:var(--text-muted);">📡 Loading announcements...</div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="hidden flex justify-center items-center gap-3 mt-12 mb-8 flex-wrap" id="pagination-container">
+            <button class="px-4 py-2.5 rounded-[10px] border font-semibold text-[.9rem] cursor-pointer transition-all duration-300 min-w-[44px] disabled:opacity-30 disabled:cursor-not-allowed"
+                    style="background:var(--surface); color:var(--text); border-color:var(--border);"
+                    id="prev-btn" onclick="previousPage()"><i class="fas fa-chevron-left"></i></button>
+            <div id="page-numbers" class="flex gap-3 items-center"></div>
+            <button class="px-4 py-2.5 rounded-[10px] border font-semibold text-[.9rem] cursor-pointer transition-all duration-300 min-w-[44px] disabled:opacity-30 disabled:cursor-not-allowed"
+                    style="background:var(--surface); color:var(--text); border-color:var(--border);"
+                    id="next-btn" onclick="nextPage()"><i class="fas fa-chevron-right"></i></button>
+        </div>
+    </main>
+
+    <!-- ══════════ EDIT ANNOUNCEMENT MODAL ══════════ -->
+    <div id="editModal" class="modal fixed z-[1000] inset-0 backdrop-blur-[8px] items-center justify-center overflow-y-auto" style="background:rgba(0,0,0,.75);">
+        <div class="border p-9 rounded-[20px] w-[90%] max-w-[720px] max-h-[90vh] overflow-y-auto m-5 shadow-[0_20px_60px_rgba(159,232,112,.3)]"
+             style="background:var(--surface); border-color:var(--accent); animation:slideUpModal .3s ease;">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-[1.8rem] font-bold tracking-tight" style="color:var(--text);">Edit Announcement</h2>
+                <span onclick="closeEditModal()" class="text-4xl cursor-pointer w-10 h-10 flex items-center justify-center rounded-full transition-all duration-300 hover:rotate-90 leading-none"
+                      style="color:var(--text-muted);" onmouseover="this.style.color='var(--accent)';this.style.background='var(--hover)';" onmouseout="this.style.color='var(--text-muted)';this.style.background='transparent';">&times;</span>
+            </div>
+            <form id="editForm" class="space-y-5">
+                <input type="hidden" id="editId">
+                <div><label class="block mb-2 font-medium" style="color:var(--text);">Title *</label><input type="text" id="editTitle" class="form-input" required placeholder="Announcement title"></div>
+                <div><label class="block mb-2 font-medium" style="color:var(--text);">Description</label><textarea id="editDescription" class="form-input" placeholder="Full description"></textarea></div>
+                <div>
+                    <label class="block mb-2 font-medium" style="color:var(--text);">Category *</label>
+                    <select id="editCategory" class="form-input" required>
+                        <option value="Emergency">Emergency</option>
+                        <option value="Deadline">Deadline</option>
+                        <option value="News">News</option>
+                        <option value="Memo">Memo</option>
+                        <option value="Notices">Notices</option>
+                    </select>
+                </div>
+                <div><label class="block mb-2 font-medium" style="color:var(--text);">Scheduled Date</label><input type="date" id="editDate" class="form-input"></div>
+                <div><label class="block mb-2 font-medium" style="color:var(--text);">Target Audience</label><input type="text" id="editAudience" class="form-input" placeholder="e.g., All Students, Faculty"></div>
+                <div class="flex gap-4 justify-end mt-6">
+                    <button type="button" onclick="closeEditModal()"
+                        class="px-6 py-2.5 rounded-[10px] border font-semibold text-[.9rem] cursor-pointer transition-all duration-300 hover:-translate-y-0.5"
+                        style="background:var(--hover); color:var(--text); border-color:var(--border);">Cancel</button>
+                    <button type="submit" id="editSubmitBtn"
+                        class="px-6 py-2.5 rounded-[10px] font-semibold text-[.9rem] cursor-pointer text-black transition-all duration-300 hover:-translate-y-0.5 shadow-[0_4px_12px_rgba(159,232,112,.3)]"
+                        style="background:linear-gradient(135deg,var(--accent-hi),var(--accent));">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══════════ EDIT PROFILE MODAL ══════════ -->
+    <div id="editProfileModal" class="modal fixed z-[1000] inset-0 backdrop-blur-[8px] items-center justify-center overflow-y-auto" style="background:rgba(0,0,0,.75);">
+        <div class="border p-9 rounded-[20px] w-[90%] max-w-[720px] max-h-[90vh] overflow-y-auto m-5 shadow-[0_20px_60px_rgba(159,232,112,.3)]"
+             style="background:var(--surface); border-color:var(--accent); animation:slideUpModal .3s ease;">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-[1.8rem] font-bold tracking-tight" style="color:var(--text);">Edit Profile</h2>
+                <span onclick="closeEditProfileModal()" class="text-4xl cursor-pointer w-10 h-10 flex items-center justify-center rounded-full transition-all duration-300 hover:rotate-90 leading-none"
+                      style="color:var(--text-muted);">&times;</span>
+            </div>
+            <form id="editProfileForm" class="space-y-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div><label class="block mb-2 font-medium" style="color:var(--text);">First Name *</label><input type="text" id="editFirstName" class="form-input" placeholder="Enter first name" required></div>
+                    <div><label class="block mb-2 font-medium" style="color:var(--text);">Last Name *</label><input type="text" id="editLastName" class="form-input" placeholder="Enter last name" required></div>
+                </div>
+                <div><label class="block mb-2 font-medium" style="color:var(--text);">Email *</label><input type="email" id="editEmail" class="form-input" placeholder="Enter your email" required></div>
+                <div>
+                    <label class="block mb-2 font-medium" style="color:var(--text);">User Type *</label>
+                    <select id="editUserType" class="form-input" required>
+                        <option value="">Select User Type</option>
+                        <option value="Faculty">Faculty</option>
+                        <option value="Officer">Officer</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block mb-2 font-medium" style="color:var(--text);">Profile Picture</label>
+                    <img id="avatarPreview" src="https://cdn-icons-png.flaticon.com/512/847/847969.png" alt="Avatar"
+                         class="w-24 h-24 rounded-full object-cover mx-auto block mb-2" style="border:3px solid var(--accent);">
+                    <input type="file" id="editAvatarFile" accept="image/*" class="form-input">
+                </div>
+                <div class="flex gap-4 justify-end mt-6">
+                    <button type="button" onclick="closeEditProfileModal()"
+                        class="px-6 py-2.5 rounded-[10px] border font-semibold text-[.9rem] cursor-pointer transition-all duration-300 hover:-translate-y-0.5"
+                        style="background:var(--hover); color:var(--text); border-color:var(--border);">Cancel</button>
+                    <button type="submit" id="profileSubmitBtn"
+                        class="px-6 py-2.5 rounded-[10px] font-semibold text-[.9rem] cursor-pointer text-black transition-all duration-300 hover:-translate-y-0.5 shadow-[0_4px_12px_rgba(159,232,112,.3)]"
+                        style="background:linear-gradient(135deg,var(--accent-hi),var(--accent));">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══════════ VIEW MODAL ══════════ -->
+    <div id="viewModal" class="modal fixed z-[1000] inset-0 backdrop-blur-[8px] items-center justify-center overflow-y-auto" style="background:rgba(0,0,0,.75);">
+        <div class="border p-9 rounded-[20px] w-[90%] max-w-[720px] max-h-[90vh] overflow-y-auto m-5 shadow-[0_20px_60px_rgba(159,232,112,.3)]"
+             style="background:var(--surface); border-color:var(--accent); animation:slideUpModal .3s ease;">
+            <div class="flex justify-between items-center mb-6">
+                <h2 id="viewModalTitle" class="text-[1.8rem] font-bold tracking-tight" style="color:var(--text);">Announcement Details</h2>
+                <span onclick="closeViewModal()" class="text-4xl cursor-pointer w-10 h-10 flex items-center justify-center rounded-full transition-all duration-300 hover:rotate-90 leading-none"
+                      style="color:var(--text-muted);">&times;</span>
+            </div>
+            <div id="viewModalBody" class="pt-2.5 leading-[1.7]" style="color:var(--text);"></div>
+        </div>
+    </div>
+
+    <!-- ══════════ CHATBOT (Alpine.js) — bottom-[160px] right-[30px] ══════════ -->
+    <div x-data="initChatbot()" x-cloak>
+        <button @click="isOpen = !isOpen"
+            class="fixed bottom-[160px] right-[30px] w-[50px] h-[50px] rounded-full flex items-center justify-center text-black cursor-pointer z-[999] border-2 text-xl transition-all duration-300 hover:scale-110 active:scale-95"
+            style="background:linear-gradient(135deg,#9FE870,#8AD95E); border-color:#9FE870; box-shadow:0 4px 12px rgba(159,232,112,.4);"
+            aria-label="Toggle chatbot">
+            <i x-show="!isOpen" class="fa-solid fa-robot"></i>
+            <i x-show="isOpen"  class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div x-show="isOpen"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-90 translate-y-10"
+             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+             x-transition:leave-end="opacity-0 scale-90 translate-y-10"
+             class="fixed bottom-[240px] right-[30px] w-[90vw] max-w-[400px] h-[560px] max-h-[70vh] rounded-3xl flex flex-col overflow-hidden z-[998] border transition-colors duration-300"
+             style="background:var(--bg); border-color:var(--border); box-shadow:0 20px 60px rgba(0,0,0,.5);">
+
+            <!-- Header -->
+            <div class="px-4 py-3 border-b flex items-center justify-between gap-3 transition-colors duration-300"
+                 style="background:var(--surface); border-color:var(--border);">
+                <div>
+                    <h2 class="font-bold text-sm tracking-wide" style="color:var(--text);">Chatbot</h2>
+                    <p class="text-[11px] font-medium" style="color:var(--accent);">Your Campus Assistant</p>
+                </div>
+                <button @click="isOpen = false" class="hover:opacity-70 transition-colors w-6 h-6 flex items-center justify-center" style="color:var(--text-muted);">
+                    <i class="fa-solid fa-minus text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Messages -->
+            <div id="chatbot-messages-container" class="flex-1 overflow-y-auto p-4 flex flex-col gap-4 transition-colors duration-300"
+                 style="background:var(--bg);">
+                <template x-for="(msg, index) in messages" :key="index">
+                    <div :style="msg.role === 'user'
+                        ? 'background:linear-gradient(135deg,#9FE870,#8AD95E);color:#000;border:1px solid #9FE870;border-radius:16px 16px 4px 16px;margin-left:auto;max-width:85%;padding:12px;font-size:.875rem;line-height:1.5;'
+                        : 'background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:16px 16px 16px 4px;margin-right:auto;max-width:85%;padding:12px;font-size:.875rem;line-height:1.5;'">
+                        <p class="whitespace-pre-wrap" x-text="msg.content"></p>
+                    </div>
+                </template>
+                <div x-show="isLoading" class="flex gap-1 p-3 border self-start"
+                     style="border-radius:16px 16px 16px 4px; background:var(--card); border-color:var(--border);">
+                    <div class="chatbot-loading-dot"></div>
+                    <div class="chatbot-loading-dot"></div>
+                    <div class="chatbot-loading-dot"></div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="p-4 border-t transition-colors duration-300" style="background:var(--surface); border-color:var(--border);">
+                <form @submit.prevent="sendMessage()" class="flex gap-2 items-center">
+                    <input type="text" x-model="userInput" placeholder="Ask about announcements, events..."
+                        class="flex-1 px-4 py-2.5 rounded-xl border text-[.875rem] outline-none transition-all duration-300"
+                        style="background:var(--card); border-color:var(--border); color:var(--text);"
+                        onfocus="this.style.borderColor='var(--accent)';"
+                        onblur="this.style.borderColor='var(--border)';">
+                    <button type="submit" :disabled="!userInput.trim() || isLoading"
+                        class="w-10 h-10 rounded-xl flex items-center justify-center border-none cursor-pointer transition-all hover:scale-105 disabled:opacity-50"
+                        style="background:linear-gradient(135deg,#9FE870,#8AD95E); color:#000; box-shadow:0 4px 12px rgba(159,232,112,.3);">
+                        <i class="fa-solid fa-paper-plane text-xs"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════ TRANSLATE BUTTON — bottom-[30px] right-[30px] ══════════ -->
+    <button id="translate-toggle-btn"
+        class="notranslate fixed bottom-[30px] right-[30px] z-[999] w-[50px] h-[50px] rounded-full flex items-center justify-center cursor-pointer text-xl text-black"
+        style="background:var(--accent); border:2px solid var(--accent); box-shadow:0 4px 12px rgba(159,232,112,.4); transition:all .3s;"
+        translate="no" aria-label="Toggle translation">
+        <i class="fas fa-language"></i>
+    </button>
+    <div id="google_translate_element" class="notranslate translate-dropdown" translate="no" style="display:none;"></div>
+
+    <script>
+    // ════════════════════════════════════════
+    // KEYS — all from keys.js
+    // ════════════════════════════════════════
+    const SUPABASE_URL = window.API_KEYS?.SUPABASE_URL      || '';
+    const SUPABASE_KEY = window.API_KEYS?.SUPABASE_ANON_KEY || '';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // ════════════════════════════════════════
+    // STATE
+    // ════════════════════════════════════════
+    let currentCategory = 'all-announcement';
+    let allAnnouncements = [];
+    let filteredAnnouncements = [];
+    let currentSearchTerm = '';
+    let currentUserProfile = {};
+    let currentPage = 1;
+    const itemsPerPage = 12;
+    let currentSortOrder = 'posted-newest';
+
+    // ════════════════════════════════════════
+    // THEME
+    // ════════════════════════════════════════
+    function toggleTheme() {
+        const body = document.body;
+        const icon = document.getElementById('theme-icon');
+        body.classList.toggle('dark-mode');
+        if (body.classList.contains('dark-mode')) {
+            icon.classList.replace('fa-sun','fa-moon');
+            localStorage.setItem('theme','dark');
+        } else {
+            icon.classList.replace('fa-moon','fa-sun');
+            localStorage.setItem('theme','light');
+        }
+        setTimeout(applyTranslateColors, 50);
+    }
+    function loadTheme() {
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+            document.getElementById('theme-icon').classList.replace('fa-sun','fa-moon');
+        }
+    }
+
+    // ════════════════════════════════════════
+    // FILTER / SORT
+    // ════════════════════════════════════════
+    function toggleFilterPanel() { document.getElementById('filterPanel').classList.toggle('active'); }
+
+    function setSortOrder(order) {
+        currentSortOrder = order;
+        document.querySelectorAll('.filter-option[data-sort]').forEach(b => {
+            b.classList.remove('active','text-black','font-semibold','shadow-[0_4px_12px_rgba(159,232,112,.3)]');
+            b.style.background = 'var(--card)';
+            b.style.borderColor = 'var(--border)';
+            b.style.color = 'var(--text-muted)';
+        });
+        const active = document.querySelector(`.filter-option[data-sort="${order}"]`);
+        if (active) {
+            active.classList.add('active','text-black','font-semibold');
+            active.style.background = 'linear-gradient(135deg,var(--accent-hi),var(--accent))';
+            active.style.borderColor = 'var(--accent)';
+            active.style.color = '#000';
+        }
+        applyFiltersAndSort();
+        displayAnnouncements(filteredAnnouncements, currentSearchTerm);
+        updatePagination();
+    }
+
+    function applyFiltersAndSort() {
+        if (currentSearchTerm) {
+            filteredAnnouncements = allAnnouncements.filter(a => {
+                const un = a.memberstest ? `${a.memberstest.firstName||''} ${a.memberstest.lastName||''}`.trim() : (a.posted_by || '');
+                const fd = formatDate(a.scheduled_date).toLowerCase();
+                return (
+                    (a.title&&a.title.toLowerCase().includes(currentSearchTerm))||
+                    (a.description&&a.description.toLowerCase().includes(currentSearchTerm))||
+                    (a.summary&&a.summary.toLowerCase().includes(currentSearchTerm))||
+                    (a.category&&a.category.toLowerCase().includes(currentSearchTerm))||
+                    (a.target_audience&&a.target_audience.toLowerCase().includes(currentSearchTerm))||
+                    (a.why&&a.why.toLowerCase().includes(currentSearchTerm))||
+                    (a.location&&a.location.toLowerCase().includes(currentSearchTerm))||
+                    (un&&un.toLowerCase().includes(currentSearchTerm))||
+                    (fd&&fd.includes(currentSearchTerm))
+                );
+            });
+        } else { filteredAnnouncements = [...allAnnouncements]; }
+        if (currentSortOrder.startsWith('audience-')) {
+            const at = currentSortOrder.replace('audience-','');
+            if (at!=='all') filteredAnnouncements = filteredAnnouncements.filter(a=>(a.target_audience||'').toLowerCase().includes(at));
+        }
+        sortAnnouncements();
+    }
+
+    function sortAnnouncements() {
+        if (!currentSortOrder.startsWith('audience-')) {
+            filteredAnnouncements.sort((a,b) => {
+                const dA = new Date(currentSortOrder.includes('scheduled') ? a.scheduled_date : a.created_at);
+                const dB = new Date(currentSortOrder.includes('scheduled') ? b.scheduled_date : b.created_at);
+                return currentSortOrder.includes('newest') ? dB-dA : dA-dB;
+            });
+        } else {
+            filteredAnnouncements.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+        }
+    }
+
+    // ════════════════════════════════════════
+    // PROTECTION
+    // ════════════════════════════════════════
+    function protectPage() {
+        const lu = localStorage.getItem('loggedInUser');
+        if (!lu) { window.location.href='faculty_login.html'; return false; }
+        try { JSON.parse(lu); return true; }
+        catch { localStorage.removeItem('loggedInUser'); window.location.href='faculty_login.html'; return false; }
+    }
+
+    // ════════════════════════════════════════
+    // AUTO-LOGOUT
+    // ════════════════════════════════════════
+    const INACTIVITY_LIMIT = 5*60*1000;
+    let inactivityTimer;
+    let autoLogoutEnabled = true;
+
+    function logoutUser() {
+        alert("You have been logged out due to inactivity.");
+        localStorage.removeItem('loggedInUser'); localStorage.removeItem('lastActivity');
+        window.location.href='faculty_login.html';
+    }
+    function resetInactivityTimer() {
+        if (!autoLogoutEnabled) { clearTimeout(inactivityTimer); return; }
+        clearTimeout(inactivityTimer);
+        localStorage.setItem('lastActivity', Date.now());
+        inactivityTimer = setTimeout(logoutUser, INACTIVITY_LIMIT);
+    }
+    function toggleAutoLogout() {
+        const cb = document.getElementById('disableAutoLogout');
+        autoLogoutEnabled = !cb.checked;
+        localStorage.setItem('autoLogoutDisabled', cb.checked);
+        autoLogoutEnabled ? resetInactivityTimer() : clearTimeout(inactivityTimer);
+    }
+    function loadAutoLogoutPreference() {
+        const disabled = localStorage.getItem('autoLogoutDisabled')==='true';
+        const cb = document.getElementById('disableAutoLogout');
+        if (cb) { cb.checked=disabled; autoLogoutEnabled=!disabled; }
+    }
+    window.onload = () => {
+        loadAutoLogoutPreference();
+        if (autoLogoutEnabled) {
+            const la = localStorage.getItem('lastActivity');
+            if (la && Date.now()-la>INACTIVITY_LIMIT) logoutUser(); else resetInactivityTimer();
+        }
+    };
+    ['mousemove','keypress','click','scroll','touchstart'].forEach(ev=>document.addEventListener(ev,resetInactivityTimer));
+
+    function handleLogout() {
+        if (!confirm('Are you sure you want to logout?')) return;
+        localStorage.removeItem('loggedInUser');
+        window.location.href='faculty_login.html';
+    }
+
+    // ════════════════════════════════════════
+    // USER PROFILE
+    // ════════════════════════════════════════
+    async function loadUserProfile() {
+        const lu = JSON.parse(localStorage.getItem('loggedInUser'));
+        if (!lu?.email) return;
+        try {
+            const { data, error } = await supabaseClient.from('memberstest').select('id,"firstName","lastName",avatar_url,email,user_type').eq('email',lu.email).single();
+            if (error) throw error;
+            currentUserProfile = data;
+            const fullName = `${data.firstName||''} ${data.lastName||''}`.trim();
+            document.getElementById('profile-name').textContent = fullName||'User';
+            document.getElementById('profile-avatar').src = data.avatar_url||'https://cdn-icons-png.flaticon.com/512/847/847969.png';
+        } catch { document.getElementById('profile-name').textContent='User'; }
+    }
+    function openEditProfileModal() { window.location.href='profile_facedetection.html'; }
+    function closeEditProfileModal() { document.getElementById('editProfileModal').classList.remove('active'); }
+
+    if (!protectPage()) throw new Error('Authentication required');
+
+    // ════════════════════════════════════════
+    // INIT
+    // ════════════════════════════════════════
+    document.addEventListener('DOMContentLoaded', async () => {
+        loadTheme();
+        await loadUserProfile();
+        await loadAnnouncements();
+
+        // Profile dropdown
+        const pc = document.getElementById('profile-container');
+        const pd = document.getElementById('profile-dropdown-content');
+        if (pc&&pd) {
+            pc.addEventListener('click', e=>{ e.stopPropagation(); pd.classList.toggle('show'); });
+            window.addEventListener('click', e=>{ if(!pc.contains(e.target)) pd.classList.remove('show'); });
+        }
+
+        // Edit profile submit
+        document.getElementById('editProfileForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn=document.getElementById('profileSubmitBtn');
+            btn.disabled=true; btn.textContent='Saving...';
+            const firstName=document.getElementById('editFirstName').value.trim();
+            const lastName=document.getElementById('editLastName').value.trim();
+            const em=document.getElementById('editEmail').value.trim();
+            const ut=document.getElementById('editUserType').value;
+            const af=document.getElementById('editAvatarFile').files[0];
+            try {
+                let avatarUrl=currentUserProfile.avatar_url;
+                if(af){
+                    const fname=`${currentUserProfile.id}_${Date.now()}.${af.name.split('.').pop()}`;
+                    const{error:ue}=await supabaseClient.storage.from('Avatar').upload(fname,af,{upsert:true});
+                    if(ue)throw ue;
+                    avatarUrl=supabaseClient.storage.from('Avatar').getPublicUrl(fname).data.publicUrl;
+                }
+                const{error:upd}=await supabaseClient.from('memberstest').update({
+                    firstName, lastName, email:em, user_type:ut, avatar_url:avatarUrl
+                }).eq('id',currentUserProfile.id);
+                if(upd)throw upd;
+                // Update localStorage name
+                const lu=JSON.parse(localStorage.getItem('loggedInUser'));
+                lu.full_name=`${firstName} ${lastName}`.trim(); lu.email=em;
+                localStorage.setItem('loggedInUser',JSON.stringify(lu));
+                alert('✅ Profile updated!'); closeEditProfileModal();
+                await loadAnnouncements(currentCategory); await loadUserProfile();
+            }catch(err){alert('Failed: '+err.message);}
+            finally{btn.disabled=false;btn.textContent='Save Changes';}
+        });
+
+        document.getElementById('editAvatarFile').addEventListener('change',function(e){
+            const f=e.target.files[0];
+            if(f){const r=new FileReader();r.onload=ev=>{document.getElementById('avatarPreview').src=ev.target.result;};r.readAsDataURL(f);}
+        });
+
+        initTranslationToggle();
+    });
+
+    // ════════════════════════════════════════
+    // LOAD ANNOUNCEMENTS
+    // ════════════════════════════════════════
+    async function loadAnnouncements(category='all-announcement', preservePage=false) {
+        try {
+            let q = supabaseClient
+    .from('announcementstest')
+    .select(`
+        *, 
+        memberstest!posted_by_member_fkey ("firstName", "lastName", avatar_url)
+    `)
+    .order('scheduled_date', { ascending: false });
+            if (category!=='all-announcement') q=q.ilike('category',category);
+            const{data,error}=await q; if(error)throw error;
+            allAnnouncements=data||[];
+            if(!preservePage)currentPage=1;
+            applyFiltersAndSort(); displayAnnouncements(filteredAnnouncements,currentSearchTerm); updatePagination();
+        }catch(err){
+            document.getElementById('newsGrid').innerHTML=`<div class="text-center py-16 col-span-full text-red-500"><i class="fas fa-exclamation-triangle text-5xl mb-4 block"></i><h3 class="text-xl font-bold">Error Loading</h3><p class="mt-2 text-sm">${err.message}</p></div>`;
+        }
+    }
+
+    // ════════════════════════════════════════
+    // PAGINATION
+    // ════════════════════════════════════════
+    function updatePagination() {
+        const total=Math.ceil(filteredAnnouncements.length/itemsPerPage);
+        const pc=document.getElementById('pagination-container');
+        if(total<=1){pc.style.display='none';return;}else pc.style.display='flex';
+        document.getElementById('prev-btn').disabled=currentPage===1;
+        document.getElementById('next-btn').disabled=currentPage===total;
+        let html='';
+        const btnStyle=`style="background:var(--surface);color:var(--text);border:1px solid var(--border);"`;
+        const activeBtnStyle=`style="background:linear-gradient(135deg,var(--accent-hi),var(--accent));color:#000;border-color:var(--accent);box-shadow:0 4px 12px rgba(159,232,112,.3);"`;
+        if(currentPage>2){html+=`<button class="px-4 py-2.5 rounded-[10px] font-semibold text-[.9rem] cursor-pointer min-w-[44px] transition-all" ${btnStyle} onclick="goToPage(1)">1</button>`;if(currentPage>3)html+=`<span class="text-[.9rem] mx-2" style="color:var(--text-muted);">...</span>`;}
+        for(let i=Math.max(1,currentPage-1);i<=Math.min(total,currentPage+1);i++) html+=`<button class="px-4 py-2.5 rounded-[10px] font-semibold text-[.9rem] cursor-pointer min-w-[44px] transition-all" ${i===currentPage?activeBtnStyle:btnStyle} onclick="goToPage(${i})">${i}</button>`;
+        if(currentPage<total-1){if(currentPage<total-2)html+=`<span class="text-[.9rem] mx-2" style="color:var(--text-muted);">...</span>`;html+=`<button class="px-4 py-2.5 rounded-[10px] font-semibold text-[.9rem] cursor-pointer min-w-[44px] transition-all" ${btnStyle} onclick="goToPage(${total})">${total}</button>`;}
+        document.getElementById('page-numbers').innerHTML=html;
+    }
+    function goToPage(p){currentPage=p;displayAnnouncements(filteredAnnouncements,currentSearchTerm);updatePagination();window.scrollTo({top:0,behavior:'smooth'});}
+    function previousPage(){if(currentPage>1)goToPage(currentPage-1);}
+    function nextPage(){if(currentPage<Math.ceil(filteredAnnouncements.length/itemsPerPage))goToPage(currentPage+1);}
+
+    // ════════════════════════════════════════
+    // DISPLAY CARDS
+    // ════════════════════════════════════════
+    function displayAnnouncements(announcements, searchTerm='') {
+        const grid=document.getElementById('newsGrid');
+        if(!announcements.length){
+            grid.innerHTML=searchTerm
+                ?`<div class="text-center py-16 col-span-full" style="color:var(--text-muted);">🔍 No results for "${escapeHtml(searchTerm)}"<br><br><button onclick="clearSearch()" class="mt-4 px-6 py-3 rounded-xl font-bold text-black" style="background:linear-gradient(135deg,var(--accent-hi),var(--accent));">Clear Search</button></div>`
+                :`<div class="text-center py-16 col-span-full" style="color:var(--text-muted);">📭 No announcements found</div>`;
+            document.getElementById('pagination-container').style.display='none';
+            return;
+        }
+        const start=(currentPage-1)*itemsPerPage;
+        const paged=announcements.slice(start,start+itemsPerPage);
+
+        grid.innerHTML=paged.map(a=>{
+            const un=a.memberstest ? `${a.memberstest.firstName||''} ${a.memberstest.lastName||''}`.trim() : (a.posted_by||'Unknown User');
+            const ua=a.memberstest?.avatar_url||'https://cdn-icons-png.flaticon.com/512/847/847969.png';
+            const isOwner=currentUserProfile.id===a.posted_by_user_id;
+            const icons=isOwner?`
+                <i class="fas fa-pencil-alt w-8 h-8 flex items-center justify-center rounded-full cursor-pointer transition-all duration-300 text-[.9rem] hover:scale-110"
+                   style="color:var(--text-muted);"
+                   onmouseover="this.style.color='var(--accent)';this.style.background='var(--hover)';"
+                   onmouseout="this.style.color='var(--text-muted)';this.style.background='transparent';"
+                   onclick="event.stopPropagation();openEditModal(${a.id})" title="Edit"></i>
+                <i class="fas fa-trash-alt w-8 h-8 flex items-center justify-center rounded-full cursor-pointer transition-all duration-300 text-[.9rem] hover:scale-110"
+                   style="color:var(--text-muted);"
+                   onmouseover="this.style.color='#ef4444';this.style.background='var(--hover)';"
+                   onmouseout="this.style.color='var(--text-muted)';this.style.background='transparent';"
+                   onclick="event.stopPropagation();deleteAnnouncement(${a.id})" title="Delete"></i>`:'';
+            return `
+            <div class="news-card relative border rounded-2xl p-6 flex flex-col gap-3 overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_12px_30px_rgba(159,232,112,.2)]"
+                 style="background:var(--surface); border-color:var(--border);">
+                <div class="absolute top-4 right-4 flex gap-2 z-10">${icons}</div>
+                <div class="pt-5">
+                    <p class="text-[.85rem] mb-2 flex items-center gap-1.5 font-medium" style="color:var(--text-muted);">
+                        <i class="fas fa-calendar-plus"></i> <strong>Posted:</strong> ${formatDate(a.posted_at)}
+                    </p>
+                    <p class="text-[.85rem] mb-2 flex items-center gap-1.5 font-medium" style="color:var(--text-muted);">
+                        <i class="fas fa-calendar-check"></i> <strong>Scheduled:</strong> ${formatDate(a.scheduled_date)}
+                    </p>
+                    <h3 class="text-[1.15rem] font-bold mb-2.5 tracking-tight leading-[1.4] pr-10 transition-colors duration-300" style="color:var(--text);">
+                        ${highlightText(escapeHtml(a.title),searchTerm)}
+                    </h3>
+                    <p class="text-[.9rem] leading-[1.6]" style="color:var(--text-muted);">
+                        <strong>Summary:</strong> ${highlightText(escapeHtml(a.summary)||'No summary provided',searchTerm)}
+                    </p>
+                    ${a.target_audience?`<p class="text-[.85rem] mt-2.5" style="color:var(--text-muted);">👥 ${highlightText(escapeHtml(a.target_audience),searchTerm)}</p>`:''}
+                    <div class="flex items-center gap-3 mt-3.5 pt-3.5 text-[.85rem]" style="border-top:1px solid var(--border); color:var(--text-muted);">
+                        <img src="${escapeHtml(ua)}" alt="${escapeHtml(un)}" class="w-9 h-9 rounded-full object-cover border-2 transition-transform duration-300" style="border-color:var(--accent);"
+                             onerror="this.src='https://cdn-icons-png.flaticon.com/512/847/847969.png'">
+                        <span>Posted by <strong>${highlightText(escapeHtml(un),searchTerm)}</strong></span>
+                    </div>
+                </div>
+                <div class="mt-auto pt-3 flex justify-between items-center" style="border-top:1px solid var(--border);">
+                    <span class="text-[.85rem] font-medium px-2.5 py-1 rounded-lg border" style="color:var(--text-muted); background:var(--hover); border-color:var(--border);">
+                        ${highlightText(escapeHtml(a.category),searchTerm)}
+                    </span>
+                    <button onclick="event.stopPropagation();openViewModal(${a.id})"
+                        class="px-3 py-1.5 rounded-lg border font-semibold text-[.8rem] cursor-pointer transition-all duration-300 hover:-translate-y-0.5"
+                        style="background:transparent; border-color:var(--accent); color:var(--accent);"
+                        onmouseover="this.style.background='var(--accent)';this.style.color='#000';"
+                        onmouseout="this.style.background='transparent';this.style.color='var(--accent)';">
+                        Read More
+                    </button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ════════════════════════════════════════
+    // SEARCH
+    // ════════════════════════════════════════
+    function searchAnnouncements(preservePage=false) {
+        const st=document.getElementById('searchInput').value.toLowerCase().trim();
+        const cb=document.getElementById('clearSearch');
+        const badge=document.getElementById('searchBadge');
+        currentSearchTerm=st;
+        if(st){cb.classList.remove('hidden');cb.classList.add('block');}else{cb.classList.add('hidden');cb.classList.remove('block');}
+        if(!st){badge.classList.add('hidden');if(!preservePage)currentPage=1;applyFiltersAndSort();displayAnnouncements(filteredAnnouncements);updatePagination();return;}
+        if(!preservePage)currentPage=1;
+        applyFiltersAndSort();
+        if(filteredAnnouncements.length>0){badge.textContent=`${filteredAnnouncements.length} result${filteredAnnouncements.length!==1?'s':''}`;badge.classList.remove('hidden');}else badge.classList.add('hidden');
+        displayAnnouncements(filteredAnnouncements,st);
+        updatePagination();
+    }
+    function clearSearch(){
+        document.getElementById('searchInput').value='';
+        document.getElementById('clearSearch').classList.add('hidden');
+        document.getElementById('searchBadge').classList.add('hidden');
+        currentSearchTerm='';currentPage=1;
+        applyFiltersAndSort();displayAnnouncements(filteredAnnouncements);updatePagination();
+    }
+    function highlightText(text,st){if(!st||!text)return text;return text.replace(new RegExp(`(${escapeRegex(st)})`,'gi'),'<span class="highlight-text">$1</span>');}
+    function escapeRegex(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+
+    // ════════════════════════════════════════
+    // CRUD
+    // ════════════════════════════════════════
+    async function deleteAnnouncement(id) {
+        if(!confirm('Delete this announcement?'))return;
+        try{const{error}=await supabaseClient.from('announcementstest').delete().eq('id',id);if(error)throw error;alert('✅ Deleted!');await loadAnnouncements(currentCategory);}
+        catch(err){alert('❌ Error: '+err.message);}
+    }
+    function openEditModal(id){
+        const a=allAnnouncements.find(x=>x.id===id);if(!a)return;
+        document.getElementById('editId').value=a.id;
+        document.getElementById('editTitle').value=a.title||'';
+        document.getElementById('editDescription').value=a.description||'';
+        document.getElementById('editCategory').value=a.category||'Emergency';
+        document.getElementById('editDate').value=a.scheduled_date||'';
+        document.getElementById('editAudience').value=a.target_audience||'';
+        document.getElementById('editModal').classList.add('active');
+    }
+    function closeEditModal(){document.getElementById('editModal').classList.remove('active');}
+    function openViewModal(id){
+        const a=allAnnouncements.find(x=>x.id===id);if(!a)return;
+        const st=document.getElementById('searchInput').value.toLowerCase().trim();
+        document.getElementById('viewModalTitle').innerHTML=highlightText(escapeHtml(a.title),st);
+        document.getElementById('viewModalBody').innerHTML=`
+            <p class="text-base font-medium mb-3 pl-2.5" style="color:var(--text-muted);border-left:3px solid var(--accent);"><strong>Date posted:</strong> ${formatDate(a.created_at)}</p>
+            <p class="text-base font-medium mb-3 pl-2.5" style="color:var(--text-muted);border-left:3px solid var(--accent);"><strong>Date scheduled:</strong> ${formatDate(a.scheduled_date)}</p>
+            <p class="text-base font-medium mb-3 pl-2.5" style="color:var(--text-muted);border-left:3px solid var(--accent);"><strong>Why:</strong> ${highlightText(escapeHtml(a.why)||'N/A',st)}</p>
+            <p class="text-base font-medium mb-5 pl-2.5" style="color:var(--text-muted);border-left:3px solid var(--accent);"><strong>Location:</strong> ${highlightText(escapeHtml(a.location)||'N/A',st)}</p>
+            <div class="text-[.95rem] mt-5 leading-[1.7] pl-2.5" style="color:var(--text);border-left:3px solid var(--border);white-space:pre-wrap;">
+                <strong style="color:var(--text-muted);">Full Content:</strong><br>
+                ${highlightText(escapeHtml(a.description).replace(/\n/g,'<br>')||'No description provided',st)}
+            </div>`;
+        document.getElementById('viewModal').classList.add('active');
+    }
+    function closeViewModal(){document.getElementById('viewModal').classList.remove('active');}
+    document.getElementById('editForm').addEventListener('submit', async function(e){
+        e.preventDefault();
+        const btn=document.getElementById('editSubmitBtn');btn.disabled=true;btn.textContent='Saving...';
+        const id=parseInt(document.getElementById('editId').value);
+        const upd={title:document.getElementById('editTitle').value,description:document.getElementById('editDescription').value||null,category:document.getElementById('editCategory').value,scheduled_date:document.getElementById('editDate').value||null,target_audience:document.getElementById('editAudience').value||null};
+        try{const{error}=await supabaseClient.from('announcementstest').update(upd).eq('id',id);if(error)throw error;alert('✅ Updated!');closeEditModal();await loadAnnouncements(currentCategory);}
+        catch(err){alert('❌ Error: '+err.message);}
+        finally{btn.disabled=false;btn.textContent='Save Changes';}
+    });
+
+    // ════════════════════════════════════════
+    // CATEGORY
+    // ════════════════════════════════════════
+    async function showCategory(categoryId) {
+        currentCategory=categoryId;currentPage=1;
+        document.getElementById('main-content').className=categoryId.toLowerCase();
+        const cfg={'all-announcement':{title:'All Announcements',icon:'fa-bullhorn'},'Emergency':{title:'Emergency Alerts',icon:'fa-exclamation-triangle'},'Deadline':{title:'Deadlines',icon:'fa-calendar-times'},'Memo':{title:'Memos',icon:'fa-clipboard-list'},'Notices':{title:'Notices',icon:'fa-info-circle'},'News':{title:'News Updates',icon:'fa-newspaper'}};
+        const c=cfg[categoryId]||cfg['all-announcement'];
+        document.getElementById('page-title').textContent=c.title;
+        document.querySelector('.news-banner i').className=`fas ${c.icon} text-[2.2rem] pulse-icon`;
+        document.querySelectorAll('.filter-link').forEach(l=>{
+            l.className='filter-link px-4 py-2 rounded-[10px] text-[.9rem] font-medium no-underline transition-all duration-200 hover:-translate-y-0.5';
+            l.style.color='var(--text-muted)';l.style.background='transparent';
+        });
+        document.querySelectorAll(`.filter-link[data-category="${categoryId}"]`).forEach(l=>{
+            l.classList.add('active-filter','text-black','font-semibold','shadow-[0_4px_12px_rgba(159,232,112,.3)]');
+            l.style.background='linear-gradient(135deg,var(--accent-hi),var(--accent))';l.style.color='#000';
+        });
+        clearSearch();await loadAnnouncements(categoryId);
+    }
+
+    // ════════════════════════════════════════
+    // UTILITIES
+    // ════════════════════════════════════════
+    function formatDate(ds){if(!ds)return'No date specified';const d=new Date(ds);return isNaN(d)?'Invalid Date':d.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});}
+    function escapeHtml(s){if(s==null)return'';return s.toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
+
+    // Auto-refresh
+    setInterval(async()=>{await loadAnnouncements(currentCategory,true);await loadUserProfile();},10000);
+
+    document.addEventListener('keydown',e=>{
+        if(e.key==='Escape'){
+            if(document.getElementById('editModal').classList.contains('active'))closeEditModal();
+            if(document.getElementById('editProfileModal').classList.contains('active'))closeEditProfileModal();
+            if(document.getElementById('viewModal').classList.contains('active'))closeViewModal();
+        }
+        if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();document.getElementById('searchInput').focus();}
+    });
+
+    // ════════════════════════════════════════
+    // VOICE SEARCH
+    // ════════════════════════════════════════
+    function startVoiceSearch(){
+        const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+        if(!SR){alert("Your browser doesn't support voice search.");return;}
+        const r=new SR(),mic=document.getElementById('voiceSearchBtn'),inp=document.getElementById('searchInput');
+        r.continuous=false;r.interimResults=false;r.lang='en-US';
+        r.onstart=()=>{mic.classList.add('listening');inp.placeholder='Listening...';};
+        r.onresult=e=>{inp.value=e.results[0][0].transcript.replace(/\.$/,'');searchAnnouncements();};
+        r.onerror=e=>{mic.classList.remove('listening');inp.placeholder='Search...';if(e.error==='not-allowed')alert('Microphone access denied.');};
+        r.onend=()=>{mic.classList.remove('listening');inp.placeholder='Search...';};
+        try{r.start();}catch(err){alert('Voice search error: '+err.message);}
+    }
+
+    // ════════════════════════════════════════
+    // GOOGLE TRANSLATE
+    // ════════════════════════════════════════
+    function getThemeColors(){
+        const isLight=document.body.classList.contains('light-mode');
+        return{text:isLight?'#163300':'#ffffff',bg:isLight?'#e8f5e0':'#1a1a1a',border:isLight?'#c9e5ba':'#2d5514'};
+    }
+    function applyTranslateColors(){
+        const dd=document.getElementById('google_translate_element');if(!dd)return;
+        const{text,bg,border}=getThemeColors();
+        const combo=dd.querySelector('.goog-te-combo,select');
+        if(combo){combo.style.setProperty('color',text,'important');combo.style.setProperty('background-color',bg,'important');combo.style.setProperty('border',`1px solid ${border}`,'important');combo.style.setProperty('border-radius','8px','important');combo.style.setProperty('padding','6px 10px','important');combo.style.setProperty('font-weight','600','important');combo.style.setProperty('font-family','Inter,sans-serif','important');combo.style.setProperty('font-size','.85rem','important');combo.style.setProperty('outline','none','important');combo.style.setProperty('cursor','pointer','important');combo.querySelectorAll('option').forEach(o=>{o.style.setProperty('color',text,'important');o.style.setProperty('background-color',bg,'important');});}
+        dd.querySelectorAll('span,a,.goog-te-menu-value,.goog-te-menu-value span').forEach(el=>el.style.setProperty('color',text,'important'));
+    }
+    function suppressTranslateBanner(){
+        function hide(){document.querySelectorAll('.goog-te-banner-frame,.skiptranslate > iframe,#goog-gt-tt,.goog-te-balloon-frame').forEach(el=>{el.style.setProperty('display','none','important');el.style.setProperty('height','0','important');el.style.setProperty('visibility','hidden','important');});if(document.body.style.top&&document.body.style.top!=='0px'){document.body.style.setProperty('top','0','important');document.body.style.setProperty('margin-top','0','important');}}
+        new MutationObserver(hide).observe(document.body,{attributes:true,attributeFilter:['style','class'],childList:true});
+        new MutationObserver(hide).observe(document.head,{childList:true});
+        hide();
+    }
+    function initTranslationToggle(){
+        const btn=document.getElementById('translate-toggle-btn'),dd=document.getElementById('google_translate_element');
+        if(!btn||!dd)return;
+        btn.addEventListener('click',e=>{e.stopPropagation();const vis=dd.style.display==='block';dd.style.display=vis?'none':'block';if(!vis)applyTranslateColors();});
+        document.addEventListener('click',e=>{if(!e.target.closest('#translate-toggle-btn')&&!e.target.closest('#google_translate_element'))dd.style.display='none';});
+        document.getElementById('theme-toggle-btn').addEventListener('click',()=>setTimeout(applyTranslateColors,50));
+        new MutationObserver(applyTranslateColors).observe(dd,{childList:true,subtree:true,attributes:true,attributeFilter:['style']});
+        let tries=0;const poll=setInterval(()=>{applyTranslateColors();if(++tries>=20)clearInterval(poll);},500);
+        suppressTranslateBanner();
+    }
+
+    // ════════════════════════════════════════
+    // CHATBOT (Alpine.js x-data) — Groq from keys.js
+    // ════════════════════════════════════════
+    function initChatbot(){
+        return {
+            isOpen:false, userInput:'', isLoading:false,
+            sessionId:'session_'+Date.now()+'_'+Math.random().toString(36).substr(2,9),
+            messages:[{role:'assistant',content:'Hi! Welcome to CentraNounceIT Hub. I can help with announcements, events, deadlines, and campus info. What would you like to know?'}],
+
+            async sendMessage(){
+                if(!this.userInput.trim())return;
+                this.messages.push({role:'user',content:this.userInput});
+                const inp=this.userInput;this.userInput='';this.isLoading=true;this.scrollToBottom();
+                let replyAppended=false;
+                try{
+                    const[annCtx,sysCtx]=await Promise.all([this.fetchAnnouncements(inp),this.fetchSystemInfo(inp)]);
+                    const sysMsg={role:'system',content:`You are the CentraNounceIT Faculty Dashboard Assistant.\n\nANNOUNCEMENTS:\n${annCtx}\n\nSYSTEM INFO:\n${sysCtx}\n\nBe concise, helpful, and professional. Format dates readably. Highlight emergencies and deadlines.`};
+                    const apiKey=window.API_KEYS?.GROQ_API_KEY||'';
+                    const msgs=[sysMsg,...this.messages.map(m=>({role:m.role,content:m.content}))];
+                    const models=['llama-3.3-70b-versatile','llama-3.1-8b-instant','mixtral-8x7b-32768','llama3-8b-8192'];
+                    let response=null,lastErr='';
+                    for(const model of models){
+                        try{const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},body:JSON.stringify({model,messages:msgs,temperature:0.7,max_tokens:1024})});
+                        if(res.ok){response=res;break;}lastErr=await res.text();if(res.status!==429&&res.status!==413)break;}catch(fe){lastErr=fe.message;}
+                    }
+                    if(!response){const wm=lastErr.match(/try again in (\d+m[\d.]+s|\d+s)/i);throw new Error(wm?`RATE_LIMITED:${wm[1]}`:'API_FAILED');}
+                    const data=await response.json();
+                    const reply=data.choices[0].message.content;
+                    this.messages.push({role:'assistant',content:reply});replyAppended=true;
+                    await this.saveChatHistory(inp,reply);
+                }catch(err){
+                    if(!replyAppended){let msg='Sorry, I encountered an error. Please try again.';if(err.message?.startsWith('RATE_LIMITED:'))msg=`⏳ Rate limited. Please try again in ${err.message.replace('RATE_LIMITED:','')}`;this.messages.push({role:'assistant',content:msg});}
+                }finally{this.isLoading=false;this.scrollToBottom();}
+            },
+
+            async fetchAnnouncements(q){
+                try{
+                   const {data, error} = await supabaseClient
+    .from('announcementstest')
+    .select(`
+        id, title, summary, category, scheduled_date, target_audience, posted_at, why, location, 
+        memberstest!posted_by_member_fkey ("firstName", "lastName")
+    `)
+    .eq('archived', false)
+    .order('posted_at', { ascending: false, nullsFirst: false })
+    .limit(20);if(error||!data?.length)return'No announcements.';
+                    const opts={year:'numeric',month:'short',day:'numeric'};
+                    return data.map((a,i)=>{
+                        const postedBy = a.memberstest ? `${a.memberstest.firstName||''} ${a.memberstest.lastName||''}`.trim() : 'Unknown';
+                        return `[${i+1}] ${a.title}\nCategory:${a.category}\nPosted:${a.posted_at?new Date(a.posted_at).toLocaleDateString('en-US',opts):'N/A'}\nScheduled:${a.scheduled_date?new Date(a.scheduled_date).toLocaleDateString('en-US',opts):'N/A'}\nAudience:${a.target_audience||'All'}\nBy:${postedBy}\nSummary:${a.summary||'N/A'}\n---`;
+                    }).join('\n');
+                }catch{return'Unable to fetch announcements.';}
+            },
+
+            async fetchSystemInfo(q){
+                try{
+                    const{data,error}=await supabaseClient.from('system_info').select('category,topic,content');
+                    if(error||!data?.length)return'No system info.';
+                    if(!q)return data.slice(0,5).map(i=>`[${i.category}] ${i.topic}: ${i.content}`).join('\n---\n');
+                    const qs=q.toLowerCase();
+                    const scored=data.map(info=>{let s=0;const cat=(info.category||'').toLowerCase(),top=(info.topic||'').toLowerCase(),cont=(info.content||'').toLowerCase();const isTeam=qs.includes('dev')||qs.includes('team')||qs.includes('who')||qs.includes('creator');if(isTeam&&(cat.includes('team')||top.includes('developer')))s+=15;qs.replace(/[^\w\s]/g,'').split(/\s+/).filter(w=>w.length>3).forEach(w=>{const st=w.substring(0,5);if(top.includes(st))s+=5;if(cat.includes(st))s+=3;if(cont.includes(st))s+=2;});return{...info,score:s};});
+                    scored.sort((a,b)=>b.score-a.score);
+                    return(scored[0].score>0?scored.slice(0,6):data.slice(0,5)).map(i=>`[${i.category}] ${i.topic}: ${i.content}`).join('\n---\n');
+                }catch{return'Unable to fetch system info.';}
+            },
+
+            async saveChatHistory(userMsg,reply){
+                try{await supabaseClient.from('chat_history').insert([{session_id:this.sessionId,user_message:userMsg,assistant_response:reply,has_security_concern:false,created_at:new Date().toISOString()}]);}catch{}
+            },
+
+            scrollToBottom(){this.$nextTick(()=>{const c=document.getElementById('chatbot-messages-container');if(c)c.scrollTop=c.scrollHeight;});}
+        };
+    }
+    </script>
+</body>
+</html>

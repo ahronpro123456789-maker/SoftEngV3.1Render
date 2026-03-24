@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="CCSICTLOGOCROP.png">
+    <title>Admin Panel - Database Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="keys.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Google Translate -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en', includedLanguages: 'en,tl',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'wise-bright-green': '#9FE870',
+                        'wise-forest-green': '#163300',
+                        'wise-light-bg': '#F4F7F4',
+                        'wise-dark-green': '#0A1A00',
+                        'wise-medium-green': '#2A5500',
+                        'wise-text-light': '#E8F5E0',
+                        'wise-text-secondary': '#B8D9A8',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <script>
+        (function() {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
+
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            font-family:'DM Sans',sans-serif;
+            background-color:#F4F6F8;
+            color:#1a1a2e;
+            overflow-x:hidden;
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            transition:all 0.3s ease;
+            background-color:#FFFFFF;
+            border-right:1px solid #E8ECF0;
+            height:100vh; overflow-y:auto;
+            position:fixed; left:0; top:0; z-index:40; width:220px;
+            display:flex; flex-direction:column;
+        }
+        .sidebar::-webkit-scrollbar { width:4px; }
+        .sidebar::-webkit-scrollbar-track { background:transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background:#D0D7DE; border-radius:2px; }
+
+        .content-area { transition:all 0.3s ease; background-color:#F4F6F8; margin-left:220px; min-height:100vh; }
+
+        @media(max-width:1023px) {
+            .sidebar { transform:translateX(-100%); width:280px; }
+            .sidebar.active { transform:translateX(0); box-shadow:4px 0 24px rgba(0,0,0,.12); }
+            .content-area { margin-left:0; }
+            .mobile-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:39; }
+            .mobile-overlay.active { display:block; }
+        }
+        @media(max-width:640px) { .sidebar { width:100%; max-width:280px; } }
+
+        /* ── SIDEBAR LOGO ── */
+        .logo-section {
+            padding:20px 16px 16px;
+            border-bottom:1px solid #F0F2F5;
+        }
+        .logo-brand {
+            display:flex; align-items:center; gap:10px;
+        }
+        .logo-icon {
+            width:36px; height:36px; border-radius:10px;
+            background:linear-gradient(135deg,#9FE870,#7acc50);
+            display:flex; align-items:center; justify-content:center;
+            font-size:16px; font-weight:800; color:#000; flex-shrink:0;
+        }
+        .logo-title { font-size:14px; font-weight:700; color:#1a1a2e; line-height:1.2; }
+        .logo-subtitle { font-size:11px; color:#8896A7; margin-top:1px; font-weight:500; }
+
+        /* ── NAV ── */
+        .nav-section-label {
+            font-size:10px; font-weight:700; color:#A0ADB8;
+            text-transform:uppercase; letter-spacing:1px;
+            padding:16px 16px 6px;
+        }
+        .nav-link {
+            display:flex; align-items:center; gap:10px;
+            padding:9px 14px; margin:1px 8px;
+            border-radius:9px; font-size:13px; font-weight:500;
+            color:#5E6E82; cursor:pointer; transition:all .18s;
+            border-left:3px solid transparent;
+            text-decoration:none; position:relative;
+        }
+        .nav-link i { width:16px; text-align:center; font-size:13px; flex-shrink:0; }
+        .nav-link:hover { background-color:#F4F6F8; color:#1a1a2e; }
+        .nav-link.active {
+            background:linear-gradient(135deg,rgba(159,232,112,.15),rgba(122,204,80,.08));
+            color:#2d6a00; border-left-color:#9FE870; font-weight:600;
+        }
+
+        .sidebar-footer { margin-top:auto; padding:12px 8px 16px; border-top:1px solid #F0F2F5; }
+
+        /* ── TABLE AREA ── */
+        .table-container { overflow:visible; border-radius:10px; width:100%; }
+
+        /* ── MODAL ── */
+        .modal { display:none; position:fixed; z-index:100; left:0; top:0; width:100%; height:100%; background-color:rgba(15,20,30,.6); backdrop-filter:blur(4px); animation:fadeIn .25s; padding:1rem; overflow-y:auto; }
+        .modal.active { display:flex; align-items:center; justify-content:center; }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        .modal-content { animation:slideIn .25s; background-color:#FFFFFF; border:1px solid #E8ECF0; border-radius:16px; width:100%; max-width:600px; box-shadow:0 24px 48px rgba(0,0,0,.12); }
+        @media(max-width:640px) { .modal-content { padding:1.5rem !important; margin:1rem; } .modal h3 { font-size:1.2rem !important; } }
+        @keyframes slideIn { from{transform:translateY(-30px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+        /* ── DASHBOARD CARDS ── */
+        .dashboard-stat-card {
+            background:linear-gradient(135deg,#9FE870 0%,#7acc50 100%);
+            border-radius:16px; padding:1.5rem;
+            transition:all .25s; cursor:pointer;
+            min-height:160px; display:flex; flex-direction:column; justify-content:space-between;
+            position:relative; overflow:hidden;
+        }
+        .dashboard-stat-card::before {
+            content:''; position:absolute; top:-20px; right:-20px;
+            width:80px; height:80px; border-radius:50%;
+            background:rgba(255,255,255,.15);
+        }
+        .dashboard-stat-card::after {
+            content:''; position:absolute; bottom:-30px; right:20px;
+            width:60px; height:60px; border-radius:50%;
+            background:rgba(255,255,255,.1);
+        }
+        .dashboard-stat-card:hover { transform:translateY(-4px); box-shadow:0 16px 32px rgba(122,204,80,.3); }
+        .dashboard-stat-card .icon { font-size:2rem; color:rgba(0,0,0,.18); margin-bottom:.75rem; }
+        .dashboard-stat-card .number { font-size:2.8rem; font-weight:800; color:#000; line-height:1; margin-bottom:.4rem; font-family:'DM Mono',monospace; }
+        .dashboard-stat-card .label { font-size:.85rem; color:rgba(0,0,0,.55); font-weight:600; }
+        .dashboard-stat-card .status { font-size:.7rem; color:rgba(0,0,0,.45); text-transform:uppercase; letter-spacing:.8px; margin-bottom:.25rem; font-weight:600; }
+        @media(max-width:640px) { .dashboard-stat-card { padding:1.25rem; min-height:140px; } .dashboard-stat-card .number { font-size:2.2rem; } }
+
+        /* ── ACTION BUTTONS ── */
+        .btn-action { transition:all .18s; padding:.4rem .45rem; font-size:.95rem; border-radius:6px; }
+        .btn-action:hover { transform:scale(1.12); }
+
+        /* ── LOADING ── */
+        .loading { display:inline-block; width:20px; height:20px; border:2.5px solid rgba(159,232,112,.25); border-radius:50%; border-top-color:#9FE870; animation:spin 0.8s ease-in-out infinite; }
+        @keyframes spin { to{transform:rotate(360deg)} }
+
+        /* ── INPUTS ── */
+        input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+            background-color:#FFFFFF !important; border:1.5px solid #E0E6EC !important;
+            color:#1a1a2e !important; border-radius:8px !important; font-family:'DM Sans',sans-serif !important;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color:#9FE870 !important; outline:none;
+            box-shadow:0 0 0 3px rgba(159,232,112,.15) !important;
+        }
+        input::placeholder, textarea::placeholder { color:#A0ADB8 !important; }
+
+        /* ── COLOR OVERRIDES ── */
+        .bg-indigo-500,.bg-indigo-600 { background-color:#9FE870 !important; color:#000 !important; }
+        .bg-indigo-500:hover,.bg-indigo-600:hover { background-color:#8AD95E !important; }
+        .text-indigo-600 { color:#2d6a00 !important; }
+        .border-indigo-500 { border-color:#9FE870 !important; }
+        .bg-white { background-color:#FFFFFF !important; }
+        .bg-gray-50,.bg-gray-100 { background-color:#F4F6F8 !important; }
+        .bg-gray-200 { background-color:#E8ECF0 !important; }
+        .text-gray-700,.text-gray-800,.text-gray-900 { color:#1a1a2e !important; }
+        .text-gray-500,.text-gray-600 { color:#5E6E82 !important; }
+        .border-gray-200,.border-gray-300 { border-color:#E8ECF0 !important; }
+        .bg-red-500 { background-color:#EF4444 !important; color:#FFFFFF !important; }
+        .bg-red-500:hover,.bg-red-600:hover { background-color:#DC2626 !important; }
+
+        /* ── CHARTS ── */
+        .chart-container { position:relative; height:280px; background-color:#FFFFFF; padding:1.25rem; border-radius:12px; border:1px solid #E8ECF0; }
+        @media(max-width:640px) { .chart-container { height:220px; padding:.75rem; } }
+
+        /* ── INFO CARDS ── */
+        .info-card { background-color:#FFFFFF; border:1px solid #E8ECF0; border-radius:14px; padding:1.5rem; transition:all .2s; box-shadow:0 1px 3px rgba(0,0,0,.04); }
+        .info-card:hover { border-color:#9FE870; box-shadow:0 4px 16px rgba(122,204,80,.1); }
+
+        /* ── PAGE HEADER ── */
+        .page-header { background:#FFFFFF; border-bottom:1px solid #E8ECF0; padding:16px 32px; margin-bottom:0; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+        @media(max-width:640px) { .page-header { padding:12px 16px; } }
+
+        /* ── TABLE STYLES ── */
+        table tbody tr { background-color:#FFFFFF; border-bottom:1px solid #F0F3F6; transition:background .15s; }
+        table tbody tr:hover { background-color:#F8FAF7; }
+        table thead { background-color:#F8F9FA; }
+        table thead th { color:#5E6E82; font-weight:600; font-size:.72rem; text-transform:uppercase; letter-spacing:.6px; border-bottom:1px solid #E8ECF0; }
+        table thead th.sortable { cursor:pointer; }
+        table thead th.sortable:hover { background-color:#F0F3F0; color:#1a1a2e; }
+        table td { color:#1a1a2e; font-size:.85rem; }
+        .expandable-cell { cursor:pointer; position:relative; transition:background-color .15s; }
+        .expandable-cell:hover { background-color:rgba(159,232,112,.08); border-radius:4px; }
+        .expand-indicator { color:#9FE870; font-weight:bold; margin-left:4px; }
+
+        /* ── NOTIFICATION BELL ── */
+        .notification-bell { position:relative; cursor:pointer; }
+
+        /* ── GOOGLE TRANSLATE ── */
+        .goog-te-banner-frame,.goog-te-banner-frame.skiptranslate,.skiptranslate > iframe,#goog-gt-tt,.goog-te-balloon-frame { display:none !important; visibility:hidden !important; height:0 !important; }
+        body { top:0 !important; position:static !important; }
+        body.translated-ltr, body.translated-rtl { top:0 !important; margin-top:0 !important; }
+        .goog-te-gadget { font-family:'DM Sans',sans-serif !important; font-size:.85rem !important; line-height:1 !important; }
+        .goog-te-gadget-simple { background-color:#FFFFFF !important; border:1px solid #E8ECF0 !important; border-radius:8px !important; padding:5px 10px !important; }
+        .goog-te-gadget-simple .goog-te-menu-value,.goog-te-gadget-simple span,.goog-te-gadget-simple a { color:#1a1a2e !important; font-weight:600 !important; background:none !important; }
+        .goog-te-gadget-icon { display:none !important; }
+        #google_translate_element select,.goog-te-combo { background-color:#F4F6F8 !important; color:#1a1a2e !important; border:1px solid #E8ECF0 !important; border-radius:8px !important; padding:5px 10px !important; font-family:'DM Sans',sans-serif !important; font-size:.85rem !important; font-weight:600 !important; outline:none !important; cursor:pointer !important; }
+        #google_translate_element select option,.goog-te-combo option { background-color:#F4F6F8 !important; color:#1a1a2e !important; }
+        .translate-dropdown { position:fixed; bottom:90px; right:30px; background:#FFFFFF; border:2px solid #9FE870; border-radius:12px; padding:8px; box-shadow:0 8px 24px rgba(0,0,0,.12); z-index:998; }
+
+        /* ── PASSWORD ── */
+        .password-requirements { font-size:.75rem; color:#5E6E82; padding-left:.25rem; margin-top:-.5rem; margin-bottom:.5rem; }
+        .password-requirements ul { list-style-type:none; padding-left:0; margin-top:.25rem; }
+        .password-requirements ul li { transition:all .2s; color:#EF4444; font-weight:500; }
+        .password-requirements ul li.met { color:#22C55E; }
+        .password-requirements ul li i { width:1.25em; }
+        .password-input-container { position:relative; }
+        .password-input-toggle { position:absolute; right:.75rem; top:0; bottom:0; height:100%; display:flex; align-items:center; cursor:pointer; color:#A0ADB8; transition:color .2s; }
+        .password-input-toggle:hover { color:#9FE870; }
+
+        /* ── MODAL TABS ── */
+        .modal-tab { color:#5E6E82; border-bottom-color:transparent; }
+        .modal-tab:hover { color:#1a1a2e; border-bottom-color:#E8ECF0; }
+        .modal-tab.active { color:#2d6a00; border-bottom-color:#9FE870; }
+
+        /* ── FILTER ── */
+        .filter-section { background-color:#F8F9FA; border-radius:10px; padding:1rem; margin-bottom:1.25rem; border:1px solid #E8ECF0; }
+        .filter-label { font-size:.7rem; font-weight:700; color:#8896A7; text-transform:uppercase; letter-spacing:.8px; margin-bottom:.5rem; display:block; }
+        .filter-tags { display:flex; flex-wrap:wrap; gap:.4rem; }
+        .filter-tag { padding:.4rem .9rem; border-radius:7px; font-size:.82rem; font-weight:500; cursor:pointer; transition:all .18s; background-color:#FFFFFF; color:#5E6E82; border:1px solid #E8ECF0; }
+        .filter-tag:hover { border-color:#9FE870; color:#2d6a00; }
+        .filter-tag.active { background-color:#9FE870; color:#000; border-color:#7acc50; font-weight:600; }
+
+        /* ── DARK MODE ── */
+        .dark body { background-color:#0f0f14; color:#E8ECF0; }
+        .dark .sidebar { background-color:#16161e; border-right:1px solid #252530; }
+        .dark .sidebar::-webkit-scrollbar-thumb { background:#252530; }
+        .dark .logo-section { border-bottom-color:#252530; }
+        .dark .logo-title { color:#E8ECF0; }
+        .dark .logo-subtitle { color:#5E6E82; }
+        .dark .nav-section-label { color:#3E4E5E; }
+        .dark .nav-link { color:#8896A7; }
+        .dark .nav-link:hover { background-color:#1e1e28 !important; color:#E8ECF0; }
+        .dark .nav-link.active { background:rgba(159,232,112,.1) !important; color:#9FE870; border-left-color:#9FE870; }
+        .dark .sidebar-footer { border-top-color:#252530; }
+        .dark .content-area { background-color:#0f0f14; }
+        .dark .page-header { background:#16161e; border-bottom-color:#252530; }
+        .dark .bg-white { background-color:#16161e !important; }
+        .dark .bg-gray-50,.dark .bg-gray-100 { background-color:#0f0f14 !important; }
+        .dark .bg-gray-200 { background-color:#252530 !important; }
+        .dark .border-gray-200,.dark .border-gray-300 { border-color:#252530 !important; }
+        .dark .text-gray-900,.dark .text-gray-800,.dark .text-gray-700 { color:#E8ECF0 !important; }
+        .dark .text-gray-600,.dark .text-gray-500 { color:#8896A7 !important; }
+        .dark .dashboard-stat-card { background:linear-gradient(135deg,#1a3a00,#0d2000); border:1px solid #2a4400; }
+        .dark .dashboard-stat-card:hover { box-shadow:0 16px 32px rgba(0,0,0,.4); border-color:#4a8000; }
+        .dark .dashboard-stat-card .number { color:#E8ECF0; }
+        .dark .dashboard-stat-card .icon { color:rgba(159,232,112,.15); }
+        .dark .dashboard-stat-card .label { color:rgba(255,255,255,.5); }
+        .dark .dashboard-stat-card .status { color:rgba(255,255,255,.35); }
+        .dark .info-card { background-color:#16161e; border:1px solid #252530; box-shadow:none; }
+        .dark .info-card:hover { border-color:#9FE870; box-shadow:0 4px 16px rgba(0,0,0,.3); }
+        .dark .chart-container { background-color:#16161e; border:1px solid #252530; }
+        .dark table thead { background-color:#0f0f14; }
+        .dark table thead th { color:#5E6E82; border-bottom-color:#252530; }
+        .dark table thead th.sortable:hover { background-color:#1a1a24; color:#E8ECF0; }
+        .dark table tbody tr { background-color:#16161e; border-bottom:1px solid #1e1e28; }
+        .dark table tbody tr:hover { background-color:#1a1a24; }
+        .dark table td { color:#D0D8E4; }
+        .dark .expandable-cell:hover { background-color:rgba(159,232,112,.05); }
+        .dark .modal-content { background-color:#16161e; border:1px solid #252530; box-shadow:0 24px 48px rgba(0,0,0,.5); }
+        .dark .modal h3 { color:#E8ECF0; }
+        .dark input:not([type="checkbox"]):not([type="radio"]),.dark select,.dark textarea,.dark #tableSearchInput { background-color:#0f0f14 !important; border:1.5px solid #252530 !important; color:#E8ECF0 !important; }
+        .dark input:focus,.dark select:focus,.dark textarea:focus,.dark #tableSearchInput:focus { border-color:#9FE870 !important; box-shadow:0 0 0 3px rgba(159,232,112,.1) !important; }
+        .dark input::placeholder,.dark textarea::placeholder,.dark #tableSearchInput::placeholder { color:#3E4E5E !important; }
+        .dark .password-requirements { color:#8896A7; }
+        .dark .password-requirements ul li { color:#F87171; }
+        .dark .password-requirements ul li.met { color:#9FE870; }
+        .dark .modal-tab { color:#8896A7; }
+        .dark .modal-tab.active { color:#9FE870; border-bottom-color:#9FE870; }
+        .dark .filter-section { background-color:#0f0f14; border-color:#252530; }
+        .dark .filter-label { color:#5E6E82; }
+        .dark .filter-tag { background-color:#16161e; color:#8896A7; border-color:#252530; }
+        .dark .filter-tag:hover { border-color:#9FE870; color:#9FE870; }
+        .dark .filter-tag.active { background-color:#9FE870; color:#000; border-color:#7acc50; }
+        .dark .goog-te-gadget-simple { background-color:#16161e !important; border:1px solid #252530 !important; }
+        .dark .goog-te-gadget-simple .goog-te-menu-value,.dark .goog-te-gadget-simple span,.dark .goog-te-gadget-simple a { color:#E8ECF0 !important; }
+        .dark #google_translate_element select,.dark .goog-te-combo { background-color:#0f0f14 !important; color:#E8ECF0 !important; border:1px solid #252530 !important; }
+        .dark #google_translate_element select option,.dark .goog-te-combo option { background-color:#0f0f14 !important; color:#E8ECF0 !important; }
+        .dark .translate-dropdown { background:#16161e; border-color:#9FE870; }
+        .dark #menuToggle { background-color:#16161e; color:#9FE870; border:1px solid #252530; }
+        .dark .bg-gray-200 { background-color:#1e1e28 !important; }
+        .dark .text-gray-700 { color:#D0D8E4 !important; }
+
+        /* ── SCROLLBAR ── */
+        ::-webkit-scrollbar { width:6px; height:6px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:#D0D7DE; border-radius:3px; }
+        .dark ::-webkit-scrollbar-thumb { background:#252530; }
+
+        /* ── RESPONSIVE ── */
+        @media(max-width:640px) {
+            .content-area { padding:1rem !important; }
+            #tableSection { padding:0 !important; }
+            .page-header { flex-direction:column; align-items:flex-start; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div id="mobileOverlay" class="mobile-overlay"></div>
+
+    <button id="menuToggle" class="lg:hidden fixed top-4 left-4 z-50 w-10 h-10 rounded-xl flex items-center justify-center shadow-sm transition-colors" style="background:#FFFFFF;border:1px solid #E8ECF0;color:#1a1a2e;">
+        <i class="fas fa-bars text-base"></i>
+    </button>
+
+    <div class="flex min-h-screen">
+        <!-- ── SIDEBAR ── -->
+        <aside id="sidebar" class="sidebar">
+            <div class="logo-section">
+                <div class="logo-brand">
+                    <div class="logo-icon">C</div>
+                    <div>
+                        <div class="logo-title">CentraNounceIT</div>
+                        <div class="logo-subtitle">Admin Panel</div>
+                    </div>
+                </div>
+            </div>
+            <nav class="mt-2 px-0 space-y-0">
+                <div class="nav-section-label">Overview</div>
+                <button onclick="showSection('dashboard')" data-table="dashboard" class="nav-link active w-full text-left">
+                    <i class="fas fa-home"></i><span class="font-semibold text-sm">Dashboard</span>
+                </button>
+                <div class="nav-section-label">Requests</div>
+                <button onclick="showSection('members_req')" data-table="members_req" class="nav-link w-full text-left">
+                    <i class="fas fa-user-clock"></i><span class="font-semibold text-sm">Member Requests</span>
+                    <span id="pendingBadge" class="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full hidden">0</span>
+                </button>
+                <div class="nav-section-label">Data</div>
+                <button onclick="showSection('notifications')" data-table="notifications" class="nav-link w-full text-left">
+                    <i class="fas fa-bell"></i><span class="font-semibold text-sm">NotifyMe!</span>
+                </button>
+                <button onclick="showSection('memberstest')" data-table="memberstest" class="nav-link w-full text-left">
+                    <i class="fas fa-users"></i><span class="font-semibold text-sm">Members</span>
+                </button>
+                <button onclick="showSection('adminstest')" data-table="adminstest" class="nav-link w-full text-left">
+                    <i class="fas fa-user-shield"></i><span class="font-semibold text-sm">Administrators</span>
+                </button>
+                <button onclick="showSection('announcementstest')" data-table="announcementstest" class="nav-link w-full text-left">
+                    <i class="fas fa-bullhorn"></i><span class="font-semibold text-sm">Announcements</span>
+                </button>
+                <div class="nav-section-label">Logs</div>
+                <button onclick="showSection('audit_logs')" data-table="audit_logs" class="nav-link w-full text-left">
+                    <i class="fas fa-history"></i><span class="font-semibold text-sm">Audit Logs</span>
+                </button>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="backup_test.html" class="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg font-semibold transition-colors flex items-center gap-2 text-sm mb-2" style="background:rgba(159,232,112,.1);color:#2d6a00;">
+                    <i class="fas fa-database"></i><span>Backup Database</span>
+                </a>
+                <button onclick="logout()" class="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg font-semibold transition-colors text-sm" style="background:rgba(239,68,68,.08);color:#EF4444;">
+                    <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- ── MAIN CONTENT ── -->
+        <main class="flex-1 content-area p-6 lg:p-8 overflow-auto">
+            <div class="page-header">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800" id="pageTitle">Dashboard</h1>
+                    <p class="text-sm text-gray-500 mt-0.5">
+                        <i class="fas fa-user-circle mr-1" style="color:#9FE870;"></i>
+                        <span id="currentUserName" class="font-semibold">Loading...</span>
+                    </p>
+                </div>
+                <div id="tableSearchContainer" class="relative hidden">
+                    <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"><i class="fas fa-search"></i></span>
+                    <input id="tableSearchInput" type="text" placeholder="Search this table..."
+                        class="pl-9 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm w-64 focus:w-72 transition-all"
+                        style="padding-left:2.25rem !important;">
+                </div>
+                <div class="flex items-center gap-3">
+                    <button id="themeToggle" class="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:border-gray-300 transition-all text-base"><i class="fas fa-moon"></i></button>
+                </div>
+            </div>
+            <div id="tableSection" class="p-6 lg:p-8"></div>
+        </main>
+    </div>
+
+    <!-- ══ MODAL ══ -->
+    <div id="modal" class="modal">
+        <div class="modal-content rounded-xl p-6 sm:p-8 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="modalTitle" class="text-2xl font-bold text-gray-800"></h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-3xl leading-none">&times;</button>
+            </div>
+            <div id="modalTabs" class="hidden mb-6 border-b border-gray-200">
+                <nav class="flex gap-4">
+                    <button type="button" onclick="switchModalTab('memberstest')" id="tabMembers" class="modal-tab active pb-3 px-4 font-semibold text-sm transition-colors border-b-2">
+                        <i class="fas fa-users mr-2"></i>Add Member
+                    </button>
+                    <button type="button" onclick="switchModalTab('adminstest')" id="tabAdmins" class="modal-tab pb-3 px-4 font-semibold text-sm transition-colors border-b-2">
+                        <i class="fas fa-user-shield mr-2"></i>Add Admin
+                    </button>
+                </nav>
+            </div>
+            <form id="modalForm" class="space-y-4"></form>
+        </div>
+    </div>
+
+    <!-- ══ TRANSLATE BUTTON ══ -->
+    <button id="translate-toggle-btn"
+        class="notranslate fixed bottom-[30px] right-[30px] z-[999] w-[50px] h-[50px] rounded-full flex items-center justify-center cursor-pointer text-xl text-black border-none"
+        style="background:#9FE870; border:2px solid #9FE870; box-shadow:0 4px 12px rgba(159,232,112,.4); transition:all .3s;"
+        translate="no" aria-label="Toggle translation">
+        <i class="fas fa-language"></i>
+    </button>
+    <div id="google_translate_element" class="notranslate translate-dropdown" translate="no" style="display:none;"></div>
+
+    <script>
+    // ════════════════════════════════════════
+    // KEYS — all from keys.js
+    // ════════════════════════════════════════
+    if (!window.sbClient) {
+        window.sbClient = window.supabase.createClient(
+            window.API_KEYS?.SUPABASE_URL      || '',
+            window.API_KEYS?.SUPABASE_ANON_KEY || ''
+        );
+    }
+    var supabase = window.sbClient;
+
+    // ════════════════════════════════════════
+    // TABLE NAME CONSTANTS
+    // ════════════════════════════════════════
+    const TBL_MEMBERS       = 'memberstest';
+    const TBL_ADMINS        = 'adminstest';
+    const TBL_ANNOUNCEMENTS = 'announcementstest';
+    const TBL_MEMBERS_REQ   = 'members_req';
+    const TBL_NOTIFICATIONS = 'notifications';
+    const TBL_AUDIT         = 'audit_logs';
+
+    // ════════════════════════════════════════
+    // GLOBAL STATE
+    // ════════════════════════════════════════
+    let currentTable        = 'dashboard';
+    let currentData         = [];
+    let filteredAnnouncements = [];
+    let currentPage         = 1;
+    let itemsPerPage        = 10;
+    let currentSearchTerm   = '';
+    let currentSort         = { column: 'posted_at', ascending: false };
+    let charts              = {};
+    let showingArchived     = false;
+    let showingRejected     = false; // toggle between pending and rejected in members_req tab
+    const archivableTables  = [TBL_MEMBERS, TBL_ANNOUNCEMENTS, TBL_NOTIFICATIONS];
+    let selectedMonth       = 'all';
+    let showFilters         = false;
+    let allPosterData       = [];
+    let announcementFilters = { type:'all', uploadDate:'all', targetAudience:'all' };
+
+    // ════════════════════════════════════════
+    // HELPER: combine firstName + lastName
+    // ════════════════════════════════════════
+    function fullName(row) {
+        if (!row) return 'Unknown';
+        if (row.firstName || row.lastName) return `${row.firstName||''} ${row.lastName||''}`.trim();
+        if (row.full_name) return row.full_name;
+        return 'Unknown';
+    }
+
+    // ════════════════════════════════════════
+    // MOBILE + USER
+    // ════════════════════════════════════════
+    document.getElementById('menuToggle').addEventListener('click', () => {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('mobileOverlay').classList.toggle('active');
+    });
+    document.getElementById('mobileOverlay').addEventListener('click', () => {
+        document.getElementById('sidebar').classList.remove('active');
+        document.getElementById('mobileOverlay').classList.remove('active');
+    });
+
+    function loadCurrentUser() {
+        try {
+            const lu = localStorage.getItem('loggedInUser');
+            if (!lu) { window.location.href='faculty_login.html'; return; }
+            const ud = JSON.parse(lu);
+            document.getElementById('currentUserName').textContent = ud.email || 'Admin';
+        } catch { document.getElementById('currentUserName').textContent = 'Admin'; }
+    }
+
+    function logout() {
+        if (confirm('Are you sure you want to logout?')) {
+            localStorage.removeItem('loggedInUser');
+            sessionStorage.clear();
+            window.location.href = 'teststartuppage.html';
+        }
+    }
+    loadCurrentUser();
+
+    // ════════════════════════════════════════
+    // UTILS
+    // ════════════════════════════════════════
+    function truncateText(text, max=100) {
+        if (!text) return '';
+        const s = String(text);
+        return s.length <= max ? s : s.substring(0, max) + '...';
+    }
+    function toggleCellExpansion(el) {
+        el.classList.toggle('expanded');
+        if (el.classList.contains('expanded')) {
+            el.textContent = el.getAttribute('data-full-text');
+        } else {
+            el.innerHTML = el.getAttribute('data-truncated-text') + '<span class="expand-indicator">⋯</span>';
+        }
+    }
+    function formatDateMMDDYY(ds) {
+        if (!ds) return 'N/A';
+        try { const d=new Date(ds); if(isNaN(d))return'Invalid'; const m=(d.getMonth()+1).toString().padStart(2,'0'),dy=d.getDate().toString().padStart(2,'0'),y=d.getFullYear().toString().slice(-2); return`${m}/${dy}/${y}`; } catch{return'Invalid';}
+    }
+    function formatDateTimeMMDDYY(ds) {
+        if (!ds) return 'N/A';
+        try { const d=new Date(ds); if(isNaN(d))return'Invalid'; const m=(d.getMonth()+1).toString().padStart(2,'0'),dy=d.getDate().toString().padStart(2,'0'),y=d.getFullYear().toString().slice(-2),h=d.getHours().toString().padStart(2,'0'),mn=d.getMinutes().toString().padStart(2,'0'); return`${m}/${dy}/${y} ${h}:${mn}`; } catch{return'Invalid';}
+    }
+    function escapeHtml(s) {
+        if (s==null) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    }
+    function getSortIcon(col) {
+        if (currentSort.column!==col) return '<i class="fas fa-sort text-gray-400 ml-2"></i>';
+        return currentSort.ascending ? '<i class="fas fa-sort-up ml-2" style="color:#9FE870;"></i>' : '<i class="fas fa-sort-down ml-2" style="color:#9FE870;"></i>';
+    }
+
+    // ════════════════════════════════════════
+    // COUNTS
+    // ════════════════════════════════════════
+    async function loadCounts() {
+        const tables = [TBL_NOTIFICATIONS, TBL_MEMBERS, TBL_ANNOUNCEMENTS, TBL_ADMINS];
+        const counts = {};
+        for (const t of tables) {
+            let q = supabase.from(t).select('*',{count:'exact',head:true});
+            if (archivableTables.includes(t)) q = q.filter('archived','eq',false);
+            const { count, error } = await q;
+            counts[t] = error ? 0 : (count||0);
+        }
+        // Pending requests = memberstest rows where is_approved=false AND not rejected
+        try {
+            const { count: pendingCount } = await supabase.from(TBL_MEMBERS)
+                .select('*',{count:'exact',head:true})
+                .eq('is_approved', false)
+                .neq('is_rejected', true);
+            counts[TBL_MEMBERS_REQ] = pendingCount || 0;
+        } catch { counts[TBL_MEMBERS_REQ] = 0; }
+        try {
+            const { count:ac } = await supabase.from(TBL_AUDIT).select('*',{count:'exact',head:true});
+            counts[TBL_AUDIT] = ac||0;
+        } catch { counts[TBL_AUDIT]=0; }
+        const badge = document.getElementById('pendingBadge');
+        if (badge) {
+            if (counts[TBL_MEMBERS_REQ]>0) { badge.textContent=counts[TBL_MEMBERS_REQ]; badge.classList.remove('hidden'); }
+            else badge.classList.add('hidden');
+        }
+        return counts;
+    }
+
+    // ════════════════════════════════════════
+    // NAVIGATE
+    // ════════════════════════════════════════
+    function navigateToSection(tableName) {
+        document.querySelectorAll('.nav-link').forEach(l => {
+            l.classList.remove('active');
+            if (l.getAttribute('data-table')===tableName) l.classList.add('active');
+        });
+        currentTable=tableName; currentPage=1; showingArchived=false; showingRejected=false; currentSearchTerm='';
+        document.getElementById('tableSearchInput').value='';
+        currentSort={column:'posted_at',ascending:false};
+        if (tableName==='dashboard') { showDashboard(); document.getElementById('tableSearchContainer').classList.add('hidden'); }
+        else { document.getElementById('pageTitle').textContent=tableName.charAt(0).toUpperCase()+tableName.slice(1).replace('_',' '); document.getElementById('tableSearchContainer').classList.remove('hidden'); loadTableData(); }
+        if (window.innerWidth<1024) { document.getElementById('sidebar').classList.remove('active'); document.getElementById('mobileOverlay').classList.remove('active'); }
+    }
+
+    // ════════════════════════════════════════
+    // DASHBOARD CHARTS
+    // ════════════════════════════════════════
+    async function getAnnouncementMetricsByTimeRange(timeRange='1year') {
+        try {
+            const now=new Date(); let startDate,labels,dataPoints;
+            if (timeRange==='7days') {
+                startDate=new Date(now); startDate.setDate(now.getDate()-6); startDate.setHours(0,0,0,0);
+                labels=[]; dataPoints=new Array(7).fill(0);
+                for(let i=0;i<7;i++){const d=new Date(startDate);d.setDate(startDate.getDate()+i);labels.push(d.toLocaleDateString('en-US',{month:'short',day:'numeric'}));}
+            } else if (timeRange==='1month') {
+                startDate=new Date(now); startDate.setDate(now.getDate()-29); startDate.setHours(0,0,0,0);
+                labels=['Week 1','Week 2','Week 3','Week 4']; dataPoints=new Array(4).fill(0);
+            } else {
+                startDate=new Date(`${new Date().getFullYear()}-01-01`);
+                labels=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; dataPoints=new Array(12).fill(0);
+            }
+            const{data,error}=await supabase.from(TBL_ANNOUNCEMENTS).select('posted_at').eq('archived',false).gte('posted_at',startDate.toISOString());
+            if (error) throw error;
+            if (data) data.forEach(a => {
+                const cd=new Date(a.posted_at);
+                if (timeRange==='7days') { const diff=Math.floor((cd-startDate)/(86400000)); if(diff>=0&&diff<7)dataPoints[diff]++; }
+                else if (timeRange==='1month') { const diff=Math.floor((cd-startDate)/(86400000)),wi=Math.floor(diff/7); if(wi>=0&&wi<4)dataPoints[wi]++; }
+                else { dataPoints[cd.getMonth()]++; }
+            });
+            return {labels, data:dataPoints};
+        } catch { return {labels:[],data:[]}; }
+    }
+    async function updateAnnouncementChart() {
+        const tr=document.getElementById('timeRangeSelector').value;
+        const md=await getAnnouncementMetricsByTimeRange(tr);
+        if (charts.announcementMetrics) { charts.announcementMetrics.data.labels=md.labels; charts.announcementMetrics.data.datasets[0].data=md.data; charts.announcementMetrics.data.datasets[1].data=md.data; charts.announcementMetrics.update(); }
+    }
+    async function getAnnouncementCategoryCounts() {
+        try {
+            const{data,error}=await supabase.from(TBL_ANNOUNCEMENTS).select('category').eq('archived',false);
+            if(error)throw error;
+            const c={'Memo':0,'Emergency':0,'Notices':0,'Deadline':0};
+            if(data)data.forEach(a=>{if(c.hasOwnProperty(a.category))c[a.category]++;});
+            return c;
+        } catch { return {'Memo':0,'Emergency':0,'Notices':0,'Deadline':0}; }
+    }
+    async function getAnnouncementAudienceCounts() {
+        try {
+            const{data,error}=await supabase.from(TBL_ANNOUNCEMENTS).select('target_audience').eq('archived',false);
+            if(error)throw error;
+            const c={faculty:0,students:0,all:0};
+            if(data)data.forEach(a=>{if(c.hasOwnProperty(a.target_audience))c[a.target_audience]++;});
+            return c;
+        } catch { return {faculty:0,students:0,all:0}; }
+    }
+    async function getAnnouncementsByPoster(limit=5) {
+        try {
+            const{data,error}=await supabase.from(TBL_ANNOUNCEMENTS).select('posted_by').eq('archived',false);
+            if(error)throw error;
+            const pc={};
+            if(data)data.forEach(a=>{const p=a.posted_by||'Unknown';pc[p]=(pc[p]||0)+1;});
+            const sorted=Object.entries(pc).sort((a,b)=>b[1]-a[1]);
+            allPosterData=sorted;
+            const top=sorted.slice(0,limit);
+            return {labels:top.map(([n])=>n),data:top.map(([,c])=>c),total:sorted.length};
+        } catch { return {labels:[],data:[],total:0}; }
+    }
+    function showAllPosters() {
+        if (!allPosterData.length){alert('No poster data');return;}
+        let rows='';
+        allPosterData.forEach(([name,count],i)=>{rows+=`<tr class="border-b border-gray-200"><td class="px-4 py-3 text-center font-semibold">${i+1}</td><td class="px-4 py-3">${escapeHtml(name)}</td><td class="px-4 py-3 text-center"><span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold" style="background:rgba(159,232,112,.2);color:#9FE870;">${count}</span></td></tr>`;});
+        document.querySelector('#modal .modal-content').innerHTML=`<div class="flex justify-between items-center mb-6"><h3 class="text-2xl font-bold text-gray-800"><i class="fas fa-user-edit mr-2" style="color:#9FE870;"></i>All Announcement Posters</h3><button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-3xl leading-none">&times;</button></div><div class="overflow-x-auto"><table class="w-full"><thead class="bg-gray-100"><tr><th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Rank</th><th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Poster Name</th><th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Announcements</th></tr></thead><tbody class="bg-white divide-y divide-gray-200">${rows}</tbody></table></div><div class="mt-6 text-center text-sm text-gray-600">Total: ${allPosterData.length} poster${allPosterData.length!==1?'s':''}</div>`;
+        document.getElementById('modal').classList.add('active');
+    }
+
+    function getChartThemeOptions() {
+        const isDark=document.documentElement.classList.contains('dark');
+        const tc=isDark?'#AAAAAA':'#666', gc=isDark?'#333333':'#E0E0E0', lc=isDark?'#E0E0E0':'#333';
+        return { scales:{y:{beginAtZero:true,ticks:{color:tc,stepSize:1},grid:{color:gc}},x:{ticks:{color:tc,font:{size:10}},grid:{color:gc}}}, plugins:{legend:{position:'bottom',labels:{color:lc,padding:10,font:{size:11}}}} };
+    }
+
+    async function showDashboard() {
+        document.getElementById('pageTitle').textContent='Dashboard';
+        document.getElementById('tableSearchContainer').classList.add('hidden');
+        document.getElementById('tableSearchInput').value='';
+        currentSearchTerm='';
+        const ts=document.getElementById('tableSection');
+        ts.innerHTML='<div class="text-center py-8"><div class="loading mx-auto"></div></div>';
+        const counts=await loadCounts();
+
+        ts.innerHTML=`
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="dashboard-stat-card" onclick="navigateToSection('${TBL_MEMBERS}')"><div><div class="icon"><i class="fas fa-users"></i></div><div class="status">Total</div><div class="number">${counts[TBL_MEMBERS]||0}</div><div class="label">Active Members</div></div></div>
+            <div class="dashboard-stat-card" onclick="navigateToSection('${TBL_ADMINS}')"><div><div class="icon"><i class="fas fa-user-shield"></i></div><div class="status">Total</div><div class="number">${counts[TBL_ADMINS]||0}</div><div class="label">Administrators</div></div></div>
+            <div class="dashboard-stat-card" onclick="navigateToSection('${TBL_ANNOUNCEMENTS}')"><div><div class="icon"><i class="fas fa-bullhorn"></i></div><div class="status">Total</div><div class="number">${counts[TBL_ANNOUNCEMENTS]||0}</div><div class="label">Announcements</div></div></div>
+            <div class="dashboard-stat-card" onclick="navigateToSection('${TBL_NOTIFICATIONS}')"><div><div class="icon"><i class="fas fa-bell"></i></div><div class="status">Total</div><div class="number">${counts[TBL_NOTIFICATIONS]||0}</div><div class="label">NotifyMe!</div></div></div>
+        </div>
+        <div class="info-card mb-8">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-user-edit mr-2" style="color:#9FE870;"></i> Announcement Distribution by Poster</h3>
+                <button onclick="showAllPosters()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-semibold transition-colors flex items-center gap-2 text-sm"><i class="fas fa-list"></i><span>View More</span></button>
+            </div>
+            <div class="chart-container"><canvas id="posterDistributionChart"></canvas></div>
+        </div>
+        <div class="info-card mb-8">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-chart-line mr-2" style="color:#9FE870;"></i> Announcement Activity</h3>
+                <select id="timeRangeSelector" onchange="updateAnnouncementChart()" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium" style="background:#FFFFFF;color:#333;">
+                    <option value="7days">Last 7 Days</option><option value="1month">Last Month</option><option value="1year" selected>Last Year</option>
+                </select>
+            </div>
+            <div class="chart-container"><canvas id="announcementMetricsChart"></canvas></div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="info-card"><h3 class="text-lg font-bold text-gray-800 mb-4"><i class="fas fa-chart-bar mr-2" style="color:#9FE870;"></i> Announcement Categories</h3><div class="chart-container"><canvas id="categoryChart"></canvas></div></div>
+            <div class="info-card"><h3 class="text-lg font-bold text-gray-800 mb-4"><i class="fas fa-users mr-2" style="color:#9FE870;"></i> Target Audience</h3><div class="chart-container"><canvas id="audienceChart"></canvas></div></div>
+        </div>
+        <div class="info-card">
+            <h3 class="text-lg font-bold text-gray-800 mb-4"><i class="fas fa-info-circle mr-2" style="color:#9FE870;"></i> System Overview</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="p-4 rounded-lg" style="background:#F5F5F5;border:1px solid #E0E0E0;"><p class="text-sm text-gray-600 mb-1">Total Records (Active)</p><p class="text-2xl font-bold" style="color:#9FE870;">${Object.values(counts).reduce((a,b)=>a+b,0)}</p></div>
+                <div class="p-4 rounded-lg" style="background:#F5F5F5;border:1px solid #E0E0E0;"><p class="text-sm text-gray-600 mb-1">Active Tables</p><p class="text-2xl font-bold" style="color:#9FE870;">4</p></div>
+                <div class="p-4 rounded-lg" style="background:#F5F5F5;border:1px solid #E0E0E0;"><p class="text-sm text-gray-600 mb-1">System Status</p><p class="text-2xl font-bold" style="color:#9FE870;">Active</p></div>
+            </div>
+        </div>`;
+
+        Object.values(charts).forEach(c=>c.destroy()); charts={};
+        const ct=getChartThemeOptions();
+        const isDark=document.documentElement.classList.contains('dark');
+
+        // Poster chart
+        const pc=document.getElementById('posterDistributionChart');
+        if(pc){const pd=await getAnnouncementsByPoster();charts.posterDistribution=new Chart(pc,{type:'bar',data:{labels:pd.labels,datasets:[{label:'Announcements Posted',data:pd.data,backgroundColor:['rgba(159,232,112,.8)','rgba(34,211,238,.8)','rgba(244,114,182,.8)','rgba(251,191,36,.8)','rgba(139,92,246,.8)'],borderColor:['#9FE870','#22D3EE','#F472B6','#FBBF24','#8B5CF6'],borderWidth:2,borderRadius:8}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{color:isDark?'#AAAAAA':'#666',stepSize:1},grid:{color:isDark?'#333333':'#E0E0E0'}},y:{ticks:{color:isDark?'#AAAAAA':'#666'},grid:{display:false}}},plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(0,0,0,.8)',titleColor:'#FFF',bodyColor:'#FFF',borderColor:'#9FE870',borderWidth:1,padding:12}}}});}
+
+        // Activity chart
+        const amc=document.getElementById('announcementMetricsChart');
+        if(amc){const md=await getAnnouncementMetricsByTimeRange('1year');charts.announcementMetrics=new Chart(amc,{type:'bar',data:{labels:md.labels,datasets:[{type:'bar',label:'Announcements Posted',data:md.data,backgroundColor:'rgba(34,211,238,.8)',borderColor:'#22D3EE',borderRadius:4,order:2},{type:'line',label:'Trend',data:md.data,borderColor:'#F472B6',backgroundColor:'rgba(244,114,182,.1)',borderWidth:3,fill:false,tension:.3,pointRadius:0,order:1}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},scales:ct.scales,plugins:{...ct.plugins,tooltip:{backgroundColor:'rgba(0,0,0,.8)',titleColor:'#FFF',bodyColor:'#FFF',borderColor:'#22D3EE',borderWidth:1,padding:12}}}});}
+
+        // Category chart
+        const cc=document.getElementById('categoryChart');
+        if(cc){const cats=await getAnnouncementCategoryCounts();charts.category=new Chart(cc,{type:'bar',data:{labels:['Memo','Emergency','Notices','Deadline'],datasets:[{label:'Count',data:Object.values(cats),backgroundColor:['rgba(34,211,238,.8)','rgba(239,68,68,.8)','rgba(245,158,11,.8)','rgba(139,92,246,.8)'],borderColor:['#22D3EE','#EF4444','#F59E0B','#8B5CF6'],borderWidth:2,borderRadius:8,barThickness:80}]},options:{responsive:true,maintainAspectRatio:false,scales:ct.scales,plugins:{...ct.plugins,tooltip:{backgroundColor:'rgba(0,0,0,.8)',titleColor:'#FFF',bodyColor:'#FFF',borderColor:'#9FE870',borderWidth:1,padding:12}}}});}
+
+        // Audience chart
+        const ac=document.getElementById('audienceChart');
+        if(ac){const aud=await getAnnouncementAudienceCounts();charts.audience=new Chart(ac,{type:'doughnut',data:{labels:['Faculty','Students','All'],datasets:[{data:[aud.faculty,aud.students,aud.all],backgroundColor:['#3B82F6','#F59E0B','#10B981'],borderColor:isDark?'#1E1E1E':'#FFFFFF',borderWidth:3,hoverOffset:15}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:isDark?'#E0E0E0':'#333',padding:15,font:{size:12},usePointStyle:true,pointStyle:'circle'}},tooltip:{backgroundColor:'rgba(0,0,0,.8)',titleColor:'#FFF',bodyColor:'#FFF',borderColor:'#9FE870',borderWidth:1,padding:12,callbacks:{label:ctx=>{const t=ctx.label||'',v=ctx.parsed||0,tot=ctx.dataset.data.reduce((a,b)=>a+b,0),pct=tot>0?((v/tot)*100).toFixed(1):0;return t+': '+v+' ('+pct+'%)';}}}}}});}
+    }
+
+    // ════════════════════════════════════════
+    // SHOW SECTION
+    // ════════════════════════════════════════
+    async function showSection(tableName) {
+        currentTable=tableName; currentPage=1; showingArchived=false; showingRejected=false; currentSearchTerm='';
+        document.getElementById('tableSearchInput').value='';
+        currentSort={column:'posted_at',ascending:false};
+        selectedMonth='all'; resetAnnouncementFilters();
+
+        document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
+        const el=event?.target?.closest('.nav-link')||document.querySelector(`.nav-link[data-table="${tableName}"]`);
+        if(el)el.classList.add('active');
+
+        if(window.innerWidth<1024){document.getElementById('sidebar').classList.remove('active');document.getElementById('mobileOverlay').classList.remove('active');}
+
+        if(tableName==='dashboard'){document.getElementById('tableSearchContainer').classList.add('hidden');await showDashboard();}
+        else {
+            document.getElementById('tableSearchContainer').classList.remove('hidden');
+            const titles={[TBL_MEMBERS]:'Members',[TBL_ADMINS]:'Administrators',[TBL_ANNOUNCEMENTS]:'Manage Announcements',[TBL_MEMBERS_REQ]:'Member Requests',[TBL_NOTIFICATIONS]:'NotifyMe!',[TBL_AUDIT]:'Audit Logs'};
+            document.getElementById('pageTitle').textContent=titles[tableName]||tableName;
+            await loadTableData();
+        }
+    }
+
+    function toggleShowArchived(v){showingArchived=v;currentPage=1;currentSearchTerm='';document.getElementById('tableSearchInput').value='';selectedMonth='all';resetAnnouncementFilters();loadTableData();}
+    function handleSearch(term){currentSearchTerm=term.toLowerCase();currentPage=1;renderTable();}
+    function handleSort(col){if(currentSort.column===col)currentSort.ascending=!currentSort.ascending;else{currentSort.column=col;currentSort.ascending=true;}currentPage=1;renderTable();}
+    function toggleDateSort(){if(currentSort.column==='posted_at')currentSort.ascending=!currentSort.ascending;else{currentSort.column='posted_at';currentSort.ascending=false;}currentPage=1;renderTable();}
+    function setMonthFilter(m){selectedMonth=m;currentPage=1;renderTable();}
+    function setAnnouncementFilter(t,v){announcementFilters[t]=v;currentPage=1;renderTable();}
+    function resetAnnouncementFilters(){announcementFilters={type:'all',uploadDate:'all',targetAudience:'all'};selectedMonth='all';}
+    function toggleFilters(){showFilters=!showFilters;renderTable();}
+
+    // ════════════════════════════════════════
+    // LOAD TABLE DATA
+    // ════════════════════════════════════════
+    async function loadTableData() {
+        try {
+            document.getElementById('tableSection').innerHTML='<div class="text-center py-8"><div class="loading mx-auto"></div></div>';
+            let data;
+            if(currentTable===TBL_AUDIT){data=await loadAuditLogs();}
+            else {
+                // Members Req tab: all queries hit memberstest, filtered by is_rejected
+                let dbTable, q;
+                if (currentTable === TBL_MEMBERS_REQ) {
+                    dbTable = TBL_MEMBERS;
+                    q = supabase.from(dbTable).select('*').eq('is_approved', false);
+                    if (showingRejected) {
+                        q = q.eq('is_rejected', true).order('id',{ascending:false});
+                    } else {
+                        q = q.neq('is_rejected', true).order('id',{ascending:true});
+                    }
+                } else {
+                    dbTable = currentTable;
+                    q = supabase.from(dbTable).select('*').order('id',{ascending:true});
+                    if(archivableTables.includes(currentTable))q=showingArchived?q.filter('archived','eq',true):q.filter('archived','eq',false);
+                }
+                const{data:qd,error}=await q; if(error)throw error;
+                data=qd||[];
+            }
+            currentData=data;
+            renderTable();
+        } catch(err){
+            document.getElementById('tableSection').innerHTML=`<div class="text-center text-red-500 py-8">Error loading data: ${escapeHtml(err.message)}</div>`;
+        }
+    }
+
+    // ════════════════════════════════════════
+    // RENDER TABLE
+    // ════════════════════════════════════════
+    function renderTable() {
+        let pd=[...currentData];
+
+        // Search
+        if(currentSearchTerm)pd=pd.filter(r=>Object.values(r).some(v=>String(v).toLowerCase().includes(currentSearchTerm)));
+
+        // Month filter
+        if(currentTable===TBL_ANNOUNCEMENTS&&selectedMonth!=='all'){const mi=parseInt(selectedMonth);pd=pd.filter(r=>r.posted_at&&new Date(r.posted_at).getMonth()===mi);}
+
+        // Announcement filters
+        if(currentTable===TBL_ANNOUNCEMENTS){
+            if(announcementFilters.type!=='all')pd=pd.filter(r=>r.category&&r.category.toLowerCase()===announcementFilters.type.toLowerCase());
+            if(announcementFilters.uploadDate!=='all'){
+                const now=new Date();
+                pd=pd.filter(r=>{
+                    if(!r.posted_at)return false;
+                    const pd2=new Date(r.posted_at);
+                    if(announcementFilters.uploadDate==='today')return pd2.toDateString()===now.toDateString();
+                    if(announcementFilters.uploadDate==='this_week'){const wa=new Date(now);wa.setDate(now.getDate()-7);return pd2>=wa;}
+                    if(announcementFilters.uploadDate==='this_month')return pd2.getMonth()===now.getMonth()&&pd2.getFullYear()===now.getFullYear();
+                    if(announcementFilters.uploadDate==='this_year')return pd2.getFullYear()===now.getFullYear();
+                    return true;
+                });
+            }
+            if(announcementFilters.targetAudience!=='all')pd=pd.filter(r=>r.target_audience&&r.target_audience.toLowerCase()===announcementFilters.targetAudience.toLowerCase());
+        }
+
+        // Sort
+        pd.sort((a,b)=>{
+            let vA=a[currentSort.column],vB=b[currentSort.column];
+            if(currentSort.column.includes('_at')&&vA&&vB){vA=new Date(vA).getTime();vB=new Date(vB).getTime();}
+            let cmp=0;
+            if(typeof vA==='number'&&typeof vB==='number')cmp=vA-vB;
+            else if(vA>vB)cmp=1;else if(vA<vB)cmp=-1;
+            if(vA==null&&vB!=null)cmp=1;if(vA!=null&&vB==null)cmp=-1;if(vA==null&&vB==null)cmp=0;
+            return currentSort.ascending?cmp:cmp*-1;
+        });
+
+        const total=pd.length,totalPages=Math.ceil(total/itemsPerPage)||1;
+        if(currentPage>totalPages)currentPage=totalPages;
+        const start=(currentPage-1)*itemsPerPage,end=start+itemsPerPage;
+        const pageData=pd.slice(start,end);
+        const isArch=archivableTables.includes(currentTable);
+        const headers=currentData.length>0?Object.keys(currentData[0]):[];
+
+        // Columns to always hide
+        const hiddenCols = new Set(['archived','archived_at','password','remember_me_preference','is_approved','is_rejected','avatar_url']);
+
+        let html=`<div class="bg-white rounded-xl shadow p-4 sm:p-6 overflow-hidden"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6"><div class="flex-1"><h2 class="text-xl sm:text-2xl font-bold text-gray-800 capitalize">${
+            currentTable === TBL_MEMBERS_REQ
+                ? (showingRejected ? 'Member Requests (Rejected)' : 'Member Requests (Pending)')
+                : currentTable.replace('_',' ') + (showingArchived?' (Archived)':'')
+        }</h2></div><div class="flex items-center gap-2 flex-wrap justify-end">`;
+
+        // Filters button for announcements
+        if(currentTable===TBL_ANNOUNCEMENTS){
+            html+=`<button onclick="toggleFilters()" class="px-3 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm"><i class="fas fa-sliders-h"></i><span>Filters</span></button></div></div>`;
+            if(showFilters){
+                html+=`<div class="filter-section">
+                    <div class="mb-3"><span class="filter-label">Month</span><div class="filter-tags">${['all','0','1','2','3','4','5','6','7','8','9','10','11'].map((m,i)=>`<button class="filter-tag ${selectedMonth===m?'active':''}" onclick="setMonthFilter('${m}')">${i===0?'All':['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i-1]}</button>`).join('')}</div></div>
+                    <div class="mb-3"><span class="filter-label">Type</span><div class="filter-tags">${['all','memo','emergency','notices','deadline'].map(t=>`<button class="filter-tag ${announcementFilters.type===t?'active':''}" onclick="setAnnouncementFilter('type','${t}')">${t.charAt(0).toUpperCase()+t.slice(1)}</button>`).join('')}</div></div>
+                    <div class="mb-3"><span class="filter-label">Upload Date</span><div class="filter-tags">${[['all','All'],['today','Today'],['this_week','This Week'],['this_month','This Month'],['this_year','This Year']].map(([v,l])=>`<button class="filter-tag ${announcementFilters.uploadDate===v?'active':''}" onclick="setAnnouncementFilter('uploadDate','${v}')">${l}</button>`).join('')}</div></div>
+                    <div><span class="filter-label">Target Audience</span><div class="filter-tags">${[['all','All'],['faculty','Faculty'],['students','Students']].map(([v,l])=>`<button class="filter-tag ${announcementFilters.targetAudience===v?'active':''}" onclick="setAnnouncementFilter('targetAudience','${v}')">${l}</button>`).join('')}</div></div>
+                </div>`;
+            }
+            html+=`<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6"><div class="flex-1"></div><div class="flex items-center gap-2 flex-wrap justify-end">`;
+        }
+
+        if(isArch)html+=`<div class="flex items-center gap-3 flex-wrap"><div class="flex items-center gap-1.5"><input type="checkbox" id="showArchivedToggle" onchange="toggleShowArchived(this.checked)" ${showingArchived?'checked':''} class="h-4 w-4 rounded" style="accent-color:#9FE870;"><label for="showArchivedToggle" class="text-sm font-medium text-gray-700 whitespace-nowrap">Show Archived</label></div><div class="flex items-center gap-1.5"><input type="checkbox" id="autoDeleteToggle" class="h-4 w-4 rounded" style="accent-color:#EF4444;"><label for="autoDeleteToggle" class="text-sm font-medium text-gray-700 whitespace-nowrap">Auto-delete &gt;24h</label></div></div>`;
+
+        if(headers.includes('posted_at')){
+            const si=currentSort.column==='posted_at'?(currentSort.ascending?'fa-arrow-up-short-wide':'fa-arrow-down-short-wide'):'fa-filter';
+            const st=currentSort.column==='posted_at'?(currentSort.ascending?'Oldest First':'Newest First'):'Sort by Date';
+            html+=`<button onclick="toggleDateSort()" class="px-3 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm"><i class="fas ${si}"></i><span class="hidden sm:inline">${st}</span></button>`;
+        }
+
+        html+=`<button onclick="exportDataToCSV()" class="px-3 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm"><i class="fas fa-file-export"></i><span class="hidden sm:inline">Export CSV</span></button>`;
+
+        // "View Rejected / View Pending" toggle — only on Member Requests tab
+        if(currentTable===TBL_MEMBERS_REQ){
+            if(showingRejected){
+                html+=`<button onclick="toggleRejectedView()" class="px-3 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 text-sm" style="background:rgba(159,232,112,.15);color:#2d6a00;border:1px solid #9FE870;"><i class="fas fa-user-clock"></i><span class="hidden sm:inline">View Pending</span></button>`;
+            } else {
+                html+=`<button onclick="toggleRejectedView()" class="px-3 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 text-sm" style="background:rgba(220,38,38,.1);color:#dc2626;border:1px solid #dc2626;"><i class="fas fa-user-times"></i><span class="hidden sm:inline">View Rejected</span></button>`;
+            }
+        }
+
+        if(currentTable!==TBL_MEMBERS_REQ)html+=`<button onclick="openAddModal()" class="px-4 py-2 rounded-lg font-semibold transition-colors ${showingArchived?'hidden':'flex'} items-center gap-2 text-sm" style="background:#9FE870;color:#000;"><i class="fas fa-plus"></i><span>Add New</span></button>`;
+
+        html+=`</div></div>`;
+
+        // ── Responsive table wrapper ──
+        html+=`<div class="w-full overflow-x-auto -mx-0 rounded-lg border border-gray-200">
+        <table class="w-full min-w-[600px] border-collapse" style="table-layout:auto;">
+        <thead><tr style="background:#F5F5F5;">
+        <th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap w-10">#</th>`;
+
+        // ── MEMBERS REQ: fixed clean columns ──
+        if(currentTable===TBL_MEMBERS_REQ){
+            const reqCols = showingRejected
+                ? [['Name','name'],['Email','email'],['User Type','user_type'],['Rejected At','rejected_at'],['Actions','actions']]
+                : [['Name','name'],['Email','email'],['User Type','user_type'],['Actions','actions']];
+            reqCols.forEach(([label, key])=>{
+                if(key==='actions') html+=`<th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap w-24">Actions</th>`;
+                else html+=`<th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide sortable whitespace-nowrap" onclick="handleSort('${key}')">${label} ${getSortIcon(key)}</th>`;
+            });
+
+        // ── ANNOUNCEMENTS: fixed columns ──
+        } else if(currentTable===TBL_ANNOUNCEMENTS){
+            [['ID','id'],['Title','title'],['Posted Date','posted_at'],['Actions','actions']].forEach(([label,key])=>{
+                if(key==='actions') html+=`<th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap w-20">Actions</th>`;
+                else if(key==='id') html+=`<th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap w-14 sortable" onclick="handleSort('${key}')">${label} ${getSortIcon(key)}</th>`;
+                else html+=`<th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide sortable whitespace-nowrap" onclick="handleSort('${key}')">${label} ${getSortIcon(key)}</th>`;
+            });
+
+        // ── AUDIT LOGS: fixed columns ──
+        } else if(currentTable===TBL_AUDIT){
+            [['Timestamp','timestamp'],['Admin','admin_name'],['Action','action'],['Table','table_name'],['Record','record_id'],['Details','details']].forEach(([label,key])=>{
+                if(key==='details') html+=`<th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap w-20">Details</th>`;
+                else html+=`<th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide sortable whitespace-nowrap" onclick="handleSort('${key}')">${label} ${getSortIcon(key)}</th>`;
+            });
+
+        // ── ALL OTHER TABLES: auto columns, skip hidden ──
+        } else {
+            headers.forEach(k=>{
+                if(hiddenCols.has(k)) return;
+                if(k==='lastName') return; // shown merged in firstName
+                const label = k==='firstName' ? 'Name' : k.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
+                const w = k==='id' ? 'w-14' : '';
+                html+=`<th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide sortable whitespace-nowrap ${w}" onclick="handleSort('${k}')">${label} ${getSortIcon(k)}</th>`;
+            });
+            html+=`<th class="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap w-24">Actions</th>`;
+        }
+
+        html+=`</tr></thead><tbody class="divide-y divide-gray-100">`;
+
+        if(!pageData.length){
+            const colspan = currentTable===TBL_MEMBERS_REQ ? (showingRejected?6:5) : currentTable===TBL_ANNOUNCEMENTS ? 5 : currentTable===TBL_AUDIT ? 7 : headers.filter(k=>!hiddenCols.has(k)&&k!=='lastName').length+2;
+            html+=`<tr><td colspan="${colspan}" class="text-center py-12 text-gray-400"><i class="fas fa-inbox text-4xl mb-3 block"></i>${currentSearchTerm?`No results for "<strong>${escapeHtml(currentSearchTerm)}</strong>".`:'No data in this view.'}</td></tr>`;
+        } else {
+            pageData.forEach((row,idx)=>{
+                html+=`<tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-3 py-3 text-sm font-medium text-gray-400 whitespace-nowrap">${start+idx+1}</td>`;
+
+                // ── MEMBERS REQ rows ──
+                if(currentTable===TBL_MEMBERS_REQ){
+                    const name = `${row.firstName||''} ${row.lastName||''}`.trim() || '—';
+                    html+=`<td class="px-3 py-3 text-sm text-gray-800 font-medium">${escapeHtml(name)}</td>`;
+                    html+=`<td class="px-3 py-3 text-sm text-gray-600 break-all">${escapeHtml(row.email||'—')}</td>`;
+                    html+=`<td class="px-3 py-3 text-sm"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold" style="background:rgba(159,232,112,.15);color:#2d6a00;">${escapeHtml(row.user_type||'—')}</span></td>`;
+                    if(showingRejected){
+                        html+=`<td class="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">${formatDateMMDDYY(row.created_at)}</td>`;
+                    }
+                    // actions
+                    html+=`<td class="px-3 py-3"><div class="flex gap-2 items-center">`;
+                    if(showingRejected){
+                        html+=`<button onclick="restorePendingRequest(${row.id})" class="btn-action text-green-500 hover:text-green-600" title="Restore to Pending"><i class="fas fa-undo"></i></button>
+                               <button onclick="deleteMemberPermanently(${row.id})" class="btn-action text-red-500 hover:text-red-600" title="Delete Permanently"><i class="fas fa-trash"></i></button>`;
+                    } else {
+                        html+=`<button onclick="approveMemberRequest(${row.id})" class="btn-action text-green-500 hover:text-green-600" title="Approve"><i class="fas fa-check-circle text-base"></i></button>
+                               <button onclick="rejectMemberRequest(${row.id})" class="btn-action text-red-500 hover:text-red-600" title="Reject"><i class="fas fa-times-circle text-base"></i></button>`;
+                    }
+                    html+=`</div></td>`;
+
+                // ── ANNOUNCEMENTS rows ──
+                } else if(currentTable===TBL_ANNOUNCEMENTS){
+                    html+=`<td class="px-3 py-3 text-sm text-gray-500 whitespace-nowrap w-14">${escapeHtml(String(row.id))}</td>`;
+                    html+=`<td class="px-3 py-3 text-sm text-gray-800 font-medium max-w-[260px]"><div class="truncate" title="${escapeHtml(row.title||'')}">${escapeHtml(row.title||'—')}</div></td>`;
+                    html+=`<td class="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">${formatDateMMDDYY(row.posted_at)}</td>`;
+                    html+=`<td class="px-3 py-3"><div class="flex gap-2"><button onclick='viewAnnouncementDetails(${JSON.stringify(row).replace(/'/g,"&#39;")})' class="btn-action text-blue-500 hover:text-blue-600" title="View"><i class="fas fa-eye"></i></button></div></td>`;
+
+                // ── AUDIT rows ──
+                } else if(currentTable===TBL_AUDIT){
+                    const actionCls={'CREATE':'text-green-600 bg-green-50','UPDATE':'text-blue-600 bg-blue-50','DELETE':'text-red-600 bg-red-50','ARCHIVE':'text-orange-600 bg-orange-50','RESTORE':'text-purple-600 bg-purple-50'}[row.action]||'text-gray-600 bg-gray-50';
+                    html+=`<td class="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">${formatDateTimeMMDDYY(row.timestamp)}</td>`;
+                    html+=`<td class="px-3 py-3 text-sm text-gray-700 whitespace-nowrap">${escapeHtml(row.admin_name||'—')}</td>`;
+                    html+=`<td class="px-3 py-3"><span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${actionCls}">${escapeHtml(row.action||'—')}</span></td>`;
+                    html+=`<td class="px-3 py-3 text-sm text-gray-600 whitespace-nowrap">${escapeHtml(row.table_name||'—')}</td>`;
+                    html+=`<td class="px-3 py-3 text-sm text-gray-500 whitespace-nowrap">${escapeHtml(String(row.record_id||'—'))}</td>`;
+                    html+=`<td class="px-3 py-3"><div class="flex gap-2"><button onclick='viewAuditDetails(${JSON.stringify(row).replace(/'/g,"&#39;")})' class="btn-action text-blue-500 hover:text-blue-600" title="View Details"><i class="fas fa-info-circle"></i></button></div></td>`;
+
+                // ── ALL OTHER TABLES rows ──
+                } else {
+                    Object.entries(row).forEach(([k,v])=>{
+                        if(hiddenCols.has(k)) return;
+                        if(k==='lastName') return;
+                        let full = v!==null ? String(v) : '';
+                        if(k==='firstName') full = `${row.firstName||''} ${row.lastName||''}`.trim();
+                        if((k.includes('_at')||k.toLowerCase().includes('date'))&&v) full=formatDateMMDDYY(v);
+                        const isId=k==='id';
+                        const trunc=truncateText(full,80), needs=full.length>80&&!isId&&!k.includes('_at');
+                        if(needs) html+=`<td class="px-3 py-3 text-sm text-gray-700 max-w-[200px]"><div class="expandable-cell" onclick="toggleCellExpansion(this)" data-full-text="${escapeHtml(full)}" data-truncated-text="${escapeHtml(trunc.replace('...',''))}">${escapeHtml(trunc)}<span class="expand-indicator">⋯</span></div></td>`;
+                        else html+=`<td class="px-3 py-3 text-sm ${isId?'text-gray-400 whitespace-nowrap w-14':'text-gray-700'}">${escapeHtml(full)||'—'}</td>`;
+                    });
+                    // Actions column for other tables
+                    html+=`<td class="px-3 py-3"><div class="flex gap-2 items-center">`;
+                    if(showingArchived){
+                        html+=`<button onclick="restoreRow(${row.id})" class="btn-action" style="color:#9FE870;" title="Restore"><i class="fas fa-undo"></i></button>
+                               <button onclick="deleteRowPermanently(${row.id})" class="btn-action text-red-500 hover:text-red-600" title="Delete"><i class="fas fa-trash-alt"></i></button>`;
+                    } else {
+                        html+=`<button onclick="openEditModal(${row.id})" class="btn-action hover:text-blue-600" style="color:#9FE870;" title="Edit"><i class="fas fa-edit"></i></button>`;
+                        if(isArch) html+=`<button onclick="archiveRow(${row.id})" class="btn-action text-yellow-600 hover:text-yellow-700" title="Archive"><i class="fas fa-archive"></i></button>`;
+                        else if(currentTable!==TBL_ADMINS) html+=`<button onclick="deleteRowPermanently(${row.id})" class="btn-action text-red-500 hover:text-red-600" title="Delete"><i class="fas fa-trash"></i></button>`;
+                    }
+                    html+=`</div></td>`;
+                }
+
+                html+=`</tr>`;
+            });
+        }
+
+        html+=`</tbody></table></div>`;
+        html+=`<div class="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4"><div class="flex items-center gap-2"><label for="rowsPerPage" class="text-sm font-medium text-gray-700">Rows per page:</label><select id="rowsPerPage" onchange="changeRowsPerPage(this.value)" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">${[5,10,15,20,50].map(n=>`<option value="${n}" ${itemsPerPage===n?'selected':''}>${n}</option>`).join('')}<option value="${total}" ${itemsPerPage===total?'selected':''}>All</option></select><span class="text-sm text-gray-600">Showing ${Math.min(start+1,total)}-${Math.min(end,total)} of ${total}</span></div>`;
+        if(totalPages>1)html+=`<div class="flex justify-center items-center gap-2"><button onclick="changePage(${currentPage-1})" ${currentPage===1?'disabled':''} class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 transition-colors"><i class="fas fa-chevron-left"></i></button><span class="px-4 py-2 text-gray-700 font-semibold">Page ${currentPage} of ${totalPages}</span><button onclick="changePage(${currentPage+1})" ${currentPage===totalPages?'disabled':''} class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 transition-colors"><i class="fas fa-chevron-right"></i></button></div>`;
+        html+=`</div></div>`;
+
+        document.getElementById('tableSection').innerHTML=html;
+
+        // Auto-delete toggle setup
+        if(isArch){
+            const adt=document.getElementById('autoDeleteToggle');
+            if(adt){adt.checked=localStorage.getItem('autoDeleteEnabled')==='true';adt.addEventListener('change',e=>{localStorage.setItem('autoDeleteEnabled',e.target.checked);alert(e.target.checked?'Auto 24h deletion is now ON.':'Auto 24h deletion is now OFF.');});}
+        }
+    }
+
+    function changePage(p){
+        let pd=[...currentData];
+        if(currentSearchTerm)pd=pd.filter(r=>Object.values(r).some(v=>String(v).toLowerCase().includes(currentSearchTerm)));
+        const tp=Math.ceil(pd.length/itemsPerPage)||1;
+        if(p<1||p>tp)return;
+        currentPage=p;renderTable();
+    }
+    function changeRowsPerPage(v){itemsPerPage=parseInt(v);currentPage=1;renderTable();}
+
+    // ════════════════════════════════════════
+    // MODAL FORMS
+    // ════════════════════════════════════════
+    function getPasswordRequirementsHTML(){
+        return`<div class="password-requirements"><span class="text-sm font-semibold">Requirements:</span><ul class="mt-1 space-y-1"><li id="req-length"><i class="fas fa-times mr-2 text-red-500"></i>At least 8 characters</li><li id="req-upper"><i class="fas fa-times mr-2 text-red-500"></i>At least 1 uppercase (A-Z)</li><li id="req-lower"><i class="fas fa-times mr-2 text-red-500"></i>At least 1 lowercase (a-z)</li><li id="req-number"><i class="fas fa-times mr-2 text-red-500"></i>At least 1 number (0-9)</li><li id="req-special"><i class="fas fa-times mr-2 text-red-500"></i>At least 1 special character (!@#$%^&*)</li></ul></div>`;
+    }
+    function validatePasswordLive(pw){
+        const modal=document.getElementById('modal');
+        const upd=(id,met)=>{const el=modal.querySelector(`#${id}`);if(!el)return;const ic=el.querySelector('i');if(met){el.classList.add('met');ic.classList.replace('fa-times','fa-check');ic.classList.remove('text-red-500');ic.classList.add('text-green-500');}else{el.classList.remove('met');ic.classList.replace('fa-check','fa-times');ic.classList.remove('text-green-500');ic.classList.add('text-red-500');}};
+        upd('req-length',pw.length>=8);upd('req-upper',/[A-Z]/.test(pw));upd('req-lower',/[a-z]/.test(pw));upd('req-number',/[0-9]/.test(pw));upd('req-special',/[!@#$%^&*]/.test(pw));
+    }
+    function validatePassword(pw){
+        const e=[];
+        if(pw.length<8)e.push('At least 8 characters');
+        if(!/[A-Z]/.test(pw))e.push('At least 1 uppercase letter');
+        if(!/[a-z]/.test(pw))e.push('At least 1 lowercase letter');
+        if(!/[0-9]/.test(pw))e.push('At least 1 number');
+        if(!/[!@#$%^&*]/.test(pw))e.push('At least 1 special character (!@#$%^&*)');
+        return e;
+    }
+    function togglePasswordVisibility(ic){const c=ic.closest('.password-input-container');if(!c)return;const inp=c.querySelector('input');if(!inp)return;inp.type=inp.type==='password'?'text':'password';ic.classList.toggle('fa-eye');ic.classList.toggle('fa-eye-slash');}
+
+    function buildFormField(key, value='', isEdit=false) {
+        // Password removed from modals (fix #5) — skip
+        if (key.toLowerCase().includes('password')) return '';
+        const skip = new Set(['id','archived','archived_at','posted_at','created_at','remember_me_preference','avatar_url']);
+        if (skip.has(key)) return '';
+
+        const label = key.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
+        const safe  = escapeHtml(value);
+        const isTA  = ['content','message','description','summary','why'].includes(key);
+        const isUT  = key === 'user_type';
+        const isEmail = key.toLowerCase().includes('email');
+
+        if (isUT) return `<div><label class="block text-sm font-semibold text-gray-700 mb-2">${label}</label><select name="${key}" class="w-full px-4 py-2 border border-gray-300 rounded-lg"><option value="">Select User Type</option><option value="Faculty" ${safe==='Faculty'?'selected':''}>Faculty</option><option value="Officer" ${safe==='Officer'?'selected':''}>Officer</option><option value="Admin" ${safe==='Admin'?'selected':''}>Admin</option></select></div>`;
+        if (isTA) return `<div><label class="block text-sm font-semibold text-gray-700 mb-2">${label}</label><textarea name="${key}" rows="6" class="w-full px-4 py-3 border border-gray-300 rounded-lg" style="min-height:150px;">${safe}</textarea></div>`;
+        return `<div><label class="block text-sm font-semibold text-gray-700 mb-2">${label}</label><input type="${isEmail?'email':'text'}" name="${key}" value="${safe}" class="w-full px-4 py-2 border border-gray-300 rounded-lg"></div>`;
+    }
+
+    function openAddModal() {
+        if(currentTable===TBL_MEMBERS||currentTable===TBL_ADMINS){
+            document.getElementById('modalTabs').classList.remove('hidden');
+            currentModalTab=currentTable;
+            switchModalTab(currentTable);
+        } else {
+            document.getElementById('modalTabs').classList.add('hidden');
+            document.getElementById('modalTitle').textContent=`Add New ${currentTable.replace('_',' ')}`;
+            buildOriginalForm();
+        }
+        document.getElementById('modal').classList.add('active');
+    }
+
+    function buildOriginalForm() {
+        const form=document.getElementById('modalForm');
+        let keys=currentData.length>0?Object.keys(currentData[0]):[];
+        let html='';
+        keys.forEach(k=>{if(k!=='id'&&k!=='archived'&&k!=='archived_at'&&k!=='posted_at'&&k!=='created_at'&&!k.toLowerCase().includes('password')&&k!=='remember_me_preference'&&k!=='avatar_url')html+=buildFormField(k,'');});
+        html+=`<div class="flex gap-3 pt-4"><button type="button" onclick="saveNew()" class="flex-1 px-6 py-3 rounded-lg font-semibold" style="background:#9FE870;color:#000;">Save</button><button type="button" onclick="closeModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold">Cancel</button></div>`;
+        form.innerHTML=html;
+    }
+
+    function openEditModal(id) {
+        const row=currentData.find(r=>r.id===id); if(!row)return;
+        document.getElementById('modalTitle').textContent=`Edit ${currentTable.replace('_',' ')}`;
+        const form=document.getElementById('modalForm');
+        let html='';
+        Object.entries(row).forEach(([k,v])=>{html+=buildFormField(k,v!==null?String(v):'',true);});
+        html+=`<input type="hidden" name="id" value="${id}"><div class="flex gap-3 pt-4"><button type="button" onclick="saveEdit()" class="flex-1 px-6 py-3 rounded-lg font-semibold" style="background:#9FE870;color:#000;">Update</button><button type="button" onclick="closeModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold">Cancel</button></div>`;
+        form.innerHTML=html;
+        document.getElementById('modal').classList.add('active');
+    }
+
+    async function saveNew() {
+        try {
+            const form=document.getElementById('modalForm');
+            const data=Object.fromEntries(new FormData(form));
+            const ts=new Date().toISOString();
+            if(archivableTables.includes(currentTable)){data.archived=false;data.archived_at=null;}
+            if([TBL_MEMBERS,TBL_ADMINS].includes(currentTable))data.created_at=ts;
+            else data.posted_at=ts;
+            const{data:ins,error}=await supabase.from(currentTable).insert([data]).select();
+            if(error)throw error;
+            if(ins?.[0])await logAuditAction('CREATE',currentTable,ins[0].id,null,ins[0]);
+            closeModal();await loadTableData();alert('Record added successfully!');
+        } catch(err){alert('Error saving: '+err.message);}
+    }
+
+    async function saveEdit() {
+        try {
+            const form=document.getElementById('modalForm');
+            const raw=Object.fromEntries(new FormData(form));
+            const id=parseInt(raw.id);delete raw.id;
+            const{data:old}=await supabase.from(currentTable).select('*').eq('id',id).single();
+            const{error}=await supabase.from(currentTable).update(raw).eq('id',id);
+            if(error)throw error;
+            await logAuditAction('UPDATE',currentTable,id,old,{...old,...raw});
+            closeModal();await loadTableData();alert('Record updated!');
+        } catch(err){alert('Error updating: '+err.message);}
+    }
+
+    async function archiveRow(id) {
+        if(!confirm('Archive this record?'))return;
+        try {
+            const{data:rec}=await supabase.from(currentTable).select('*').eq('id',id).single();
+            const upd={archived:true,archived_at:new Date().toISOString()};
+            const{error}=await supabase.from(currentTable).update(upd).eq('id',id);
+            if(error)throw error;
+            await logAuditAction('ARCHIVE',currentTable,id,rec,{...rec,...upd});
+            await loadTableData();alert('Record archived!');
+        } catch(err){alert('Error archiving: '+err.message);}
+    }
+
+    async function restoreRow(id) {
+        if(!confirm('Restore this record?'))return;
+        try {
+            const{data:rec}=await supabase.from(currentTable).select('*').eq('id',id).single();
+            const upd={archived:false,archived_at:null};
+            const{error}=await supabase.from(currentTable).update(upd).eq('id',id);
+            if(error)throw error;
+            await logAuditAction('RESTORE',currentTable,id,rec,{...rec,...upd});
+            await loadTableData();alert('Record restored!');
+        } catch(err){alert('Error restoring: '+err.message);}
+    }
+
+    async function deleteRowPermanently(id) {
+        if(!confirm('PERMANENT DELETE: This cannot be undone.'))return;
+        try {
+            const{data:rec}=await supabase.from(currentTable).select('*').eq('id',id).single();
+            const{error}=await supabase.from(currentTable).delete().eq('id',id);
+            if(error)throw error;
+            await logAuditAction('DELETE',currentTable,id,rec);
+            await loadTableData();alert('Record permanently deleted!');
+        } catch(err){alert('Error deleting: '+err.message);}
+    }
+
+    function closeModal(){document.getElementById('modal').classList.remove('active');document.getElementById('modalTabs').classList.add('hidden');}
+
+    // ════════════════════════════════════════
+    // TAB MODAL (members/admins)
+    // ════════════════════════════════════════
+    let currentModalTab = TBL_MEMBERS;
+    function switchModalTab(tab) {
+        currentModalTab=tab;
+        document.getElementById('tabMembers').classList.toggle('active',tab===TBL_MEMBERS);
+        document.getElementById('tabAdmins').classList.toggle('active',tab===TBL_ADMINS);
+        document.getElementById('modalTitle').textContent=tab===TBL_MEMBERS?'Add New Member':'Add New Admin';
+        buildAddForm(tab);
+    }
+    function buildAddForm(tab) {
+        const form=document.getElementById('modalForm');
+        const keys=tab===TBL_MEMBERS?['firstName','lastName','user_type','email']:['email'];
+        let html='';
+        keys.forEach(k=>html+=buildFormField(k,''));
+        html+=`<div class="flex gap-3 pt-4"><button type="button" onclick="saveNewFromTab()" class="flex-1 px-6 py-3 rounded-lg font-semibold" style="background:#9FE870;color:#000;">Save</button><button type="button" onclick="closeModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold">Cancel</button></div>`;
+        form.innerHTML=html;
+    }
+    async function saveNewFromTab() {
+        try {
+            const form=document.getElementById('modalForm');
+            const data=Object.fromEntries(new FormData(form));
+            const ts=new Date().toISOString();
+            data.created_at=ts;
+            if(currentModalTab===TBL_MEMBERS){data.archived=false;data.archived_at=null;}
+            else{data.is_archived=false;}
+            const{error}=await supabase.from(currentModalTab).insert([data]);
+            if(error)throw error;
+            closeModal();
+            if(currentTable===currentModalTab)await loadTableData();
+            alert(`${currentModalTab===TBL_MEMBERS?'Member':'Admin'} added successfully!`);
+        } catch(err){alert('Error saving: '+err.message);}
+    }
+
+    // ════════════════════════════════════════
+    // MEMBER REQUEST APPROVAL (Fix #4)
+    // ════════════════════════════════════════
+    // MEMBER REQUEST APPROVAL
+    // — memberstest rows with is_approved=false show in the Req tab
+    // — Approving flips is_approved=true → row disappears from tab
+    // ════════════════════════════════════════
+    async function approveMemberRequest(requestId) {
+        if(!confirm('Approve this member request and activate their account?'))return;
+        try {
+            // Simply flip is_approved = true on the existing memberstest row
+            const{error}=await supabase.from(TBL_MEMBERS)
+                .update({ is_approved: true })
+                .eq('id', requestId);
+            if(error)throw error;
+
+            alert('Member approved! Their account is now active.');
+            await loadTableData(); await loadCounts();
+        } catch(err){alert('Error approving: '+err.message);}
+    }
+
+    async function rejectMemberRequest(requestId) {
+        if(!confirm('Reject this member request? They will be moved to the Rejected section.'))return;
+        try {
+            const{error}=await supabase.from(TBL_MEMBERS)
+                .update({ is_rejected: true })
+                .eq('id', requestId);
+            if(error)throw error;
+            alert('Member request rejected.');
+            await loadTableData(); await loadCounts();
+        } catch(err){alert('Error rejecting: '+err.message);}
+    }
+
+    // Toggle between pending and rejected views in the Member Requests tab
+    function toggleRejectedView() {
+        showingRejected = !showingRejected;
+        currentPage = 1;
+        currentSearchTerm = '';
+        document.getElementById('tableSearchInput').value = '';
+        loadTableData();
+    }
+
+    // Restore a rejected member back to pending
+    async function restorePendingRequest(requestId) {
+        if(!confirm('Restore this request back to pending?'))return;
+        try {
+            const{error}=await supabase.from(TBL_MEMBERS)
+                .update({ is_rejected: false })
+                .eq('id', requestId);
+            if(error)throw error;
+            alert('Request restored to pending.');
+            await loadTableData(); await loadCounts();
+        } catch(err){alert('Error restoring: '+err.message);}
+    }
+
+    // Permanently delete a rejected member row from memberstest
+    async function deleteMemberPermanently(requestId) {
+        if(!confirm('PERMANENT DELETE: This rejected request will be removed entirely. This cannot be undone.'))return;
+        try {
+            const{error}=await supabase.from(TBL_MEMBERS).delete().eq('id', requestId);
+            if(error)throw error;
+            alert('Rejected request permanently deleted.');
+            await loadTableData(); await loadCounts();
+        } catch(err){alert('Error deleting: '+err.message);}
+    }
+
+    // ════════════════════════════════════════
+    // VIEW MODALS
+    // ════════════════════════════════════════
+    function viewAnnouncementDetails(row) {
+        document.getElementById('modalTitle').textContent='Announcement Details';
+        const form=document.getElementById('modalForm');
+        const keys=Object.keys(row).filter(k=>k!=='archived'&&k!=='archived_at');
+        let html='<div class="space-y-4">';
+        keys.forEach(k=>{
+            const v=row[k]; const dn=k.replace(/_/g,' ').replace(/\b\w/g,l=>l.toUpperCase());
+            const isLong=['content','description','summary','why'].includes(k);
+            const isDate=k.includes('_at')||k.includes('date');
+            let dv=v||'N/A'; if(isDate&&v)dv=formatDateMMDDYY(v);
+            if(isLong)html+=`<div><label class="block text-sm font-semibold text-gray-700 mb-2">${dn}</label><div class="text-gray-800 bg-gray-50 px-4 py-3 rounded-lg whitespace-pre-wrap min-h-[100px] max-h-[300px] overflow-y-auto">${escapeHtml(String(dv))}</div></div>`;
+            else html+=`<div><label class="block text-sm font-semibold text-gray-700 mb-2">${dn}</label><p class="text-gray-800 bg-gray-50 px-4 py-2 rounded-lg">${escapeHtml(String(dv))}</p></div>`;
+        });
+        html+=`</div><div class="flex gap-3 pt-4"><button type="button" onclick="closeModal()" class="flex-1 px-6 py-3 rounded-lg font-semibold" style="background:#9FE870;color:#000;">Close</button></div>`;
+        form.innerHTML=html;
+        document.getElementById('modal').classList.add('active');
+    }
+    function viewAuditDetails(row) {
+        document.getElementById('modalTitle').textContent='Audit Log Details';
+        const form=document.getElementById('modalForm');
+        const fmtJson=s=>{if(!s)return'N/A';try{return JSON.stringify(JSON.parse(s),null,2);}catch{return s;}};
+        const cls={'CREATE':'text-green-600','UPDATE':'text-blue-600','DELETE':'text-red-600','ARCHIVE':'text-orange-600','RESTORE':'text-purple-600'}[row.action]||'text-gray-600';
+        form.innerHTML=`<div class="space-y-4"><div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label class="block text-sm font-semibold text-gray-700 mb-2">Timestamp</label><p class="text-gray-800 bg-gray-50 px-4 py-2 rounded-lg">${formatDateTimeMMDDYY(row.timestamp)}</p></div>
+            <div><label class="block text-sm font-semibold text-gray-700 mb-2">Admin</label><p class="text-gray-800 bg-gray-50 px-4 py-2 rounded-lg">${escapeHtml(row.admin_name||'N/A')}</p></div>
+            <div><label class="block text-sm font-semibold text-gray-700 mb-2">Action</label><p class="text-gray-800 bg-gray-50 px-4 py-2 rounded-lg"><span class="${cls} font-semibold">${escapeHtml(row.action)}</span></p></div>
+            <div><label class="block text-sm font-semibold text-gray-700 mb-2">Table</label><p class="text-gray-800 bg-gray-50 px-4 py-2 rounded-lg">${escapeHtml(row.table_name||'N/A')}</p></div>
+            <div><label class="block text-sm font-semibold text-gray-700 mb-2">Record ID</label><p class="text-gray-800 bg-gray-50 px-4 py-2 rounded-lg">${escapeHtml(String(row.record_id||'N/A'))}</p></div>
+            <div><label class="block text-sm font-semibold text-gray-700 mb-2">Admin Email</label><p class="text-gray-800 bg-gray-50 px-4 py-2 rounded-lg">${escapeHtml(row.admin_email||'N/A')}</p></div>
+        </div>
+        ${row.old_data?`<div><label class="block text-sm font-semibold text-gray-700 mb-2">Old Data</label><pre class="text-gray-800 bg-gray-50 px-4 py-3 rounded-lg whitespace-pre-wrap max-h-[200px] overflow-y-auto text-sm font-mono">${escapeHtml(fmtJson(row.old_data))}</pre></div>`:''}
+        ${row.new_data?`<div><label class="block text-sm font-semibold text-gray-700 mb-2">New Data</label><pre class="text-gray-800 bg-gray-50 px-4 py-3 rounded-lg whitespace-pre-wrap max-h-[200px] overflow-y-auto text-sm font-mono">${escapeHtml(fmtJson(row.new_data))}</pre></div>`:''}
+        </div><div class="flex gap-3 pt-4"><button type="button" onclick="closeModal()" class="flex-1 px-6 py-3 rounded-lg font-semibold" style="background:#9FE870;color:#000;">Close</button></div>`;
+        document.getElementById('modal').classList.add('active');
+    }
+
+    // ════════════════════════════════════════
+    // AUDIT LOG
+    // ════════════════════════════════════════
+    async function logAuditAction(action,tableName,recordId,oldData=null,newData=null) {
+        try {
+            const cu=JSON.parse(localStorage.getItem('loggedInUser')||'{}');
+            await supabase.from(TBL_AUDIT).insert([{
+                admin_email:cu.email||'Unknown',admin_name:cu.full_name||cu.email||'Unknown',
+                action,table_name:tableName,record_id:recordId,
+                old_data:oldData?JSON.stringify(oldData):null,new_data:newData?JSON.stringify(newData):null,
+                timestamp:new Date().toISOString(),ip_address:'N/A'
+            }]);
+        } catch(err){console.warn('Audit log failed:',err.message);}
+    }
+    async function loadAuditLogs() {
+        try {
+            const{data,error}=await supabase.from(TBL_AUDIT).select('*').order('timestamp',{ascending:false}).limit(1000);
+            if(error){if(error.code==='PGRST106'||error.code==='42P01'){console.warn('audit_logs table not found');return [{id:1,timestamp:new Date().toISOString(),admin_name:'System',action:'INFO',table_name:'audit_logs',record_id:'N/A',admin_email:'system',old_data:null,new_data:JSON.stringify({message:'Audit logs table not found. Create it in Supabase to enable logging.'}),ip_address:'N/A'}];}throw error;}
+            return data||[];
+        } catch{return [];}
+    }
+
+    // ════════════════════════════════════════
+    // CSV EXPORT
+    // ════════════════════════════════════════
+    function exportDataToCSV() {
+        let pd=[...currentData];
+        if(currentSearchTerm)pd=pd.filter(r=>Object.values(r).some(v=>String(v).toLowerCase().includes(currentSearchTerm)));
+        if(!pd.length){alert('No data to export.');return;}
+        try {
+            const csv=Papa.unparse(pd);
+            const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+            const link=document.createElement('a');
+            link.setAttribute('href',URL.createObjectURL(blob));
+            link.setAttribute('download',`${currentTable}_${showingArchived?'archived':'active'}_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility='hidden';
+            document.body.appendChild(link);link.click();document.body.removeChild(link);
+        } catch(err){alert('Export error: '+err.message);}
+    }
+
+    // ════════════════════════════════════════
+    // AUTO-CLEAR ARCHIVES
+    // ════════════════════════════════════════
+    async function autoClearOldArchives() {
+        const cutoff=new Date(Date.now()-24*60*60*1000).toISOString();
+        for(const t of archivableTables){
+            try{const{error}=await supabase.from(t).delete().eq('archived',true).lt('archived_at',cutoff);if(error)console.error(`Archive clear error for ${t}:`,error.message);}catch{}
+        }
+    }
+
+    // ════════════════════════════════════════
+    // DARK MODE
+    // ════════════════════════════════════════
+    const themeToggle=document.getElementById('themeToggle');
+    const themeIcon=themeToggle.querySelector('i');
+    function setIcon(isDark){if(isDark){themeIcon.classList.replace('fa-moon','fa-sun');themeToggle.classList.add('text-yellow-400');themeToggle.classList.remove('text-gray-600');}else{themeIcon.classList.replace('fa-sun','fa-moon');themeToggle.classList.remove('text-yellow-400');themeToggle.classList.add('text-gray-600');}}
+    function toggleDarkMode(){const d=document.documentElement.classList.toggle('dark');localStorage.theme=d?'dark':'light';setIcon(d);applyTranslateColors();if(currentTable==='dashboard')showDashboard();}
+    themeToggle.addEventListener('click',toggleDarkMode);
+
+    // ════════════════════════════════════════
+    // GOOGLE TRANSLATE
+    // ════════════════════════════════════════
+    function applyTranslateColors(){
+        const isDark=document.documentElement.classList.contains('dark');
+        const text=isDark?'#E0E0E0':'#333',bg=isDark?'#121212':'#F5F5F5',border=isDark?'#333333':'#E0E0E0';
+        const dd=document.getElementById('google_translate_element');if(!dd)return;
+        const combo=dd.querySelector('.goog-te-combo,select');
+        if(combo){combo.style.setProperty('color',text,'important');combo.style.setProperty('background-color',bg,'important');combo.style.setProperty('border',`1px solid ${border}`,'important');combo.style.setProperty('border-radius','8px','important');combo.style.setProperty('padding','6px 10px','important');combo.style.setProperty('font-weight','600','important');combo.style.setProperty('font-family','Poppins,sans-serif','important');combo.style.setProperty('font-size','.85rem','important');combo.style.setProperty('outline','none','important');combo.style.setProperty('cursor','pointer','important');combo.querySelectorAll('option').forEach(o=>{o.style.setProperty('color',text,'important');o.style.setProperty('background-color',bg,'important');});}
+        dd.querySelectorAll('span,a,.goog-te-menu-value,.goog-te-menu-value span').forEach(el=>el.style.setProperty('color',text,'important'));
+    }
+    function suppressTranslateBanner(){
+        function hide(){document.querySelectorAll('.goog-te-banner-frame,.skiptranslate > iframe,#goog-gt-tt,.goog-te-balloon-frame').forEach(el=>{el.style.setProperty('display','none','important');el.style.setProperty('height','0','important');el.style.setProperty('visibility','hidden','important');});if(document.body.style.top&&document.body.style.top!=='0px'){document.body.style.setProperty('top','0','important');document.body.style.setProperty('margin-top','0','important');}}
+        new MutationObserver(hide).observe(document.body,{attributes:true,attributeFilter:['style','class'],childList:true});
+        new MutationObserver(hide).observe(document.head,{childList:true});
+        hide();
+    }
+    function initTranslationToggle(){
+        const btn=document.getElementById('translate-toggle-btn'),dd=document.getElementById('google_translate_element');
+        if(!btn||!dd)return;
+        btn.addEventListener('click',e=>{e.stopPropagation();const vis=dd.style.display==='block';dd.style.display=vis?'none':'block';if(!vis)applyTranslateColors();});
+        document.addEventListener('click',e=>{if(!e.target.closest('#translate-toggle-btn')&&!e.target.closest('#google_translate_element'))dd.style.display='none';});
+        themeToggle.addEventListener('click',()=>setTimeout(applyTranslateColors,50));
+        new MutationObserver(applyTranslateColors).observe(dd,{childList:true,subtree:true,attributes:true,attributeFilter:['style']});
+        let tries=0;const poll=setInterval(()=>{applyTranslateColors();if(++tries>=20)clearInterval(poll);},500);
+        suppressTranslateBanner();
+    }
+
+    // ════════════════════════════════════════
+    // INIT
+    // ════════════════════════════════════════
+    window.addEventListener('DOMContentLoaded', async()=>{
+        setIcon(document.documentElement.classList.contains('dark'));
+        document.getElementById('tableSearchInput').addEventListener('input',e=>handleSearch(e.target.value));
+        if(localStorage.getItem('autoDeleteEnabled')==='true')await autoClearOldArchives();
+        initTranslationToggle();
+        await showDashboard();
+    });
+    </script>
+</body>
+</html>

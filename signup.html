@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="CCSICTLOGOCROP.png">
+    <title>Sign Up - CentraNounceIT DeptHub</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="keys.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Translate -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en', includedLanguages: 'en,tl',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+    <style>
+        /* ── CSS Variables: dark default ── */
+        :root {
+            --bg:         #1a1a1a;
+            --surface:    #2a2a2a;
+            --card:       #1a1a1a;
+            --border:     #404040;
+            --text:       #ffffff;
+            --text-muted: #999999;
+            --accent:     #9FE870;
+            --accent-dark:#8AD95E;
+            --shadow-g:   rgba(159,232,112,0.3);
+        }
+
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        /* ── Form inputs ── */
+        .form-input {
+            width: 100%; padding: 14px 16px; border-radius: 8px;
+            border: 2px solid var(--border);
+            background: var(--card); color: var(--text);
+            font-family: 'Poppins', sans-serif; font-size: .95rem;
+            transition: border-color .3s; outline: none;
+        }
+        .form-input:focus { border-color: var(--accent); }
+        .form-input::placeholder { color: var(--text-muted); }
+        .form-input:disabled { background: #222; color: #777; cursor: not-allowed; }
+
+        /* ── Google Translate banner suppression ── */
+        .goog-te-banner-frame,
+        .goog-te-banner-frame.skiptranslate,
+        .skiptranslate > iframe,
+        #goog-gt-tt,
+        .goog-te-balloon-frame { display:none !important; visibility:hidden !important; height:0 !important; }
+        body { top:0 !important; position:static !important; }
+        body.translated-ltr, body.translated-rtl { top:0 !important; margin-top:0 !important; }
+        .goog-te-gadget { font-family:'Poppins',sans-serif !important; font-size:.85rem !important; line-height:1 !important; }
+        .goog-te-gadget-simple { background-color:#2a2a2a !important; border:1px solid #404040 !important; border-radius:8px !important; padding:6px 10px !important; }
+        .goog-te-gadget-simple .goog-te-menu-value,
+        .goog-te-gadget-simple span,
+        .goog-te-gadget-simple a { color:#ffffff !important; font-weight:600 !important; background:none !important; }
+        .goog-te-gadget-icon { display:none !important; }
+        #google_translate_element select, .goog-te-combo { background-color:#1a1a1a !important; color:#ffffff !important; border:1px solid #404040 !important; border-radius:8px !important; padding:6px 10px !important; font-family:'Poppins',sans-serif !important; font-size:.85rem !important; font-weight:600 !important; outline:none !important; cursor:pointer !important; }
+        #google_translate_element select option, .goog-te-combo option { background-color:#1a1a1a !important; color:#ffffff !important; }
+
+        /* ── Translate dropdown ── */
+        .translate-dropdown {
+            position: fixed; bottom: 90px; right: 30px;
+            background: #2a2a2a; border: 2px solid #9FE870;
+            border-radius: 12px; padding: 8px;
+            box-shadow: 0 8px 20px rgba(0,0,0,.3); z-index: 998;
+        }
+
+        /* ── Alpine cloak ── */
+        [x-cloak] { display: none !important; }
+
+        /* ── Password requirement item ── */
+        .req-item { color: #999; }
+        .req-item.valid { color: #9FE870; }
+    </style>
+</head>
+
+<body x-data="signupApp()" x-init="init()">
+
+    <!-- ── Signup card ── -->
+    <div class="w-full max-w-[600px] rounded-[20px] p-12 relative shadow-[0_20px_60px_rgba(0,0,0,.5)]"
+         style="background:#2a2a2a;">
+
+        <!-- Close button -->
+        <button @click="window.location.href='teststartuppage.html'"
+            class="absolute top-6 right-6 text-[#999] text-2xl hover:text-white transition-colors bg-transparent border-none cursor-pointer">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-white text-3xl font-bold mb-1">Request Account</h1>
+            <p class="text-[#999] text-sm">Fill in your details to request access</p>
+        </div>
+
+        <!-- Status message -->
+        <div x-show="message.text"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 -translate-y-2"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             :class="message.type === 'success'
+                ? 'bg-[rgba(159,232,112,.1)] border border-[#9FE870] text-[#9FE870]'
+                : 'bg-[rgba(239,68,68,.1)] border border-red-500 text-red-400'"
+             class="p-4 rounded-xl mb-6 text-sm"
+             x-text="message.text">
+        </div>
+
+        <form @submit.prevent="handleSubmit()" class="space-y-6">
+
+            <!-- First Name + Last Name -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-white font-medium mb-2 text-[.95rem]">First Name</label>
+                    <input type="text" x-model="firstName" :disabled="otpSent"
+                        placeholder="Enter first name" required class="form-input">
+                </div>
+                <div>
+                    <label class="block text-white font-medium mb-2 text-[.95rem]">Last Name</label>
+                    <input type="text" x-model="lastName" :disabled="otpSent"
+                        placeholder="Enter last name" required class="form-input">
+                </div>
+            </div>
+
+            <!-- User Type -->
+            <div>
+                <label class="block text-white font-medium mb-2 text-[.95rem]">User Type</label>
+                <select x-model="userType" :disabled="otpSent" required class="form-input">
+                    <option value="">Select user type</option>
+                    <option value="officer">Officer</option>
+                    <option value="faculty">Faculty</option>
+                </select>
+            </div>
+
+            <!-- Email -->
+            <div>
+                <label class="block text-white font-medium mb-2 text-[.95rem]">Email
+                    <span class="text-[#666] font-normal text-xs ml-1">(@isu.edu.ph only)</span>
+                </label>
+                <div class="relative">
+                    <input type="email" x-model="email" :disabled="otpSent"
+                        @input="checkEmail()"
+                        placeholder="yourname@isu.edu.ph" required
+                        :class="email && !emailValid ? 'border-red-500 focus:border-red-500' : ''"
+                        class="form-input pr-10">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-lg pointer-events-none"
+                          x-show="email">
+                        <i :class="emailValid ? 'fas fa-check-circle text-[#9FE870]' : 'fas fa-times-circle text-red-500'"></i>
+                    </span>
+                </div>
+                <p x-show="email && !emailValid"
+                   class="text-red-400 text-xs mt-1.5">
+                    Only <strong>@isu.edu.ph</strong> email addresses are accepted.
+                </p>
+            </div>
+
+            <!-- Password -->
+            <div>
+                <label class="block text-white font-medium mb-2 text-[.95rem]">Password</label>
+                <div class="relative">
+                    <input :type="showPassword ? 'text' : 'password'"
+                        x-model="password" :disabled="otpSent"
+                        @input="checkPassword()"
+                        placeholder="Enter password" required
+                        class="form-input pr-12">
+                    <button type="button" @click="showPassword = !showPassword"
+                        class="absolute right-4 top-1/2 -translate-y-1/2 text-[#999] hover:text-[#9FE870] transition-colors bg-transparent border-none cursor-pointer text-lg">
+                        <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                    </button>
+                </div>
+
+                <!-- Password requirements -->
+                <div class="mt-3 p-4 rounded-xl" style="background:#1a1a1a;">
+                    <h4 class="text-white text-sm font-semibold mb-3">Requirements:</h4>
+                    <div class="space-y-1.5">
+                        <div class="req-item flex items-center gap-2 text-[.85rem]"
+                             :class="{ valid: reqs.length }">
+                            <i class="fas fa-check text-xs"></i><span>At least 8 characters</span>
+                        </div>
+                        <div class="req-item flex items-center gap-2 text-[.85rem]"
+                             :class="{ valid: reqs.upper }">
+                            <i class="fas fa-check text-xs"></i><span>At least 1 uppercase (A-Z)</span>
+                        </div>
+                        <div class="req-item flex items-center gap-2 text-[.85rem]"
+                             :class="{ valid: reqs.lower }">
+                            <i class="fas fa-check text-xs"></i><span>At least 1 lowercase (a-z)</span>
+                        </div>
+                        <div class="req-item flex items-center gap-2 text-[.85rem]"
+                             :class="{ valid: reqs.number }">
+                            <i class="fas fa-check text-xs"></i><span>At least 1 number (0-9)</span>
+                        </div>
+                        <div class="req-item flex items-center gap-2 text-[.85rem]"
+                             :class="{ valid: reqs.special }">
+                            <i class="fas fa-check text-xs"></i><span>At least 1 special character (@#$%^&*)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OTP field (shown after OTP is sent) -->
+            <div x-show="otpSent"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-2"
+                 x-transition:enter-end="opacity-100 translate-y-0">
+                <label class="block text-white font-medium mb-2 text-[.95rem]">Verification Code</label>
+                <input type="text" x-model="otpInput" maxlength="6"
+                    placeholder="Enter 6-digit code" class="form-input">
+                <small class="text-[#999] mt-1.5 block text-xs">A 6-digit code has been sent to your email.</small>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex gap-4 pt-2">
+                <button type="submit" :disabled="submitting"
+                    class="flex-1 py-4 rounded-[10px] font-bold text-base text-black cursor-pointer transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border-none"
+                    style="background:linear-gradient(135deg,#9FE870,#8AD95E); box-shadow:0 4px 12px rgba(159,232,112,.3);"
+                    onmouseover="if(!this.disabled)this.style.boxShadow='0 8px 20px rgba(159,232,112,.4)';"
+                    onmouseout="this.style.boxShadow='0 4px 12px rgba(159,232,112,.3)';">
+                    <span x-text="btnLabel"></span>
+                </button>
+                <button type="button" @click="window.location.href='teststartuppage.html'"
+                    class="flex-1 py-4 rounded-[10px] font-bold text-base text-white cursor-pointer transition-all duration-300 border-none"
+                    style="background:#404040;"
+                    onmouseover="this.style.background='#505050';"
+                    onmouseout="this.style.background='#404040';">
+                    Cancel
+                </button>
+            </div>
+        </form>
+
+        <!-- Login link -->
+        <p class="text-center mt-6 text-[#999] text-sm">
+            Already have an account?
+            <a href="faculty_login.html" class="text-[#9FE870] font-semibold no-underline hover:underline">Log in here</a>
+        </p>
+    </div>
+
+    <!-- ══ TRANSLATE BUTTON — bottom-[30px] right-[30px] ══ -->
+    <button id="translate-toggle-btn"
+        class="notranslate fixed bottom-[30px] right-[30px] z-[999] w-[50px] h-[50px] rounded-full flex items-center justify-center cursor-pointer text-xl text-black border-none"
+        style="background:#9FE870; border:2px solid #9FE870; box-shadow:0 4px 12px rgba(159,232,112,.4); transition:all .3s;"
+        translate="no" aria-label="Toggle translation">
+        <i class="fas fa-language"></i>
+    </button>
+    <div id="google_translate_element" class="notranslate translate-dropdown" translate="no" style="display:none;"></div>
+
+    <script>
+    // ════════════════════════════════════════
+    // KEYS — all from keys.js
+    // ════════════════════════════════════════
+    const supabaseClient = supabase.createClient(
+        window.API_KEYS?.SUPABASE_URL      || '',
+        window.API_KEYS?.SUPABASE_ANON_KEY || ''
+    );
+
+    // ════════════════════════════════════════
+    // MAIN ALPINE COMPONENT
+    // ════════════════════════════════════════
+    function signupApp() {
+        return {
+            // ── Form fields ──
+            firstName:    '',
+            lastName:     '',
+            userType:     '',
+            email:        '',
+            emailValid:   false,
+            password:     '',
+            showPassword: false,
+
+            // ── Password requirements ──
+            reqs: { length: false, upper: false, lower: false, number: false, special: false },
+
+            // ── OTP flow ──
+            otpSent:    false,
+            otpInput:   '',
+            generatedOtp: null,
+            savedFormData: {},
+
+            // ── UI state ──
+            submitting: false,
+            message:    { text: '', type: '' },
+
+            // ── Computed button label ──
+            get btnLabel() {
+                if (this.submitting) return this.otpSent ? 'Submitting...' : 'Sending Code...';
+                return this.otpSent ? 'Verify & Submit Request' : 'Submit Request';
+            },
+
+            // ── Init ──
+            init() {
+                // EmailJS from keys.js
+                emailjs.init(window.API_KEYS?.EMAILJS_PUBLIC_KEY_SIGNUP || '');
+                initTranslationToggle();
+            },
+
+            // ── Email domain checker ──
+            checkEmail() {
+                this.emailValid = /^[^\s@]+@isu\.edu\.ph$/i.test(this.email.trim());
+            },
+
+            // ── Password requirements checker ──
+            checkPassword() {
+                const p = this.password;
+                this.reqs.length  = p.length >= 8;
+                this.reqs.upper   = /[A-Z]/.test(p);
+                this.reqs.lower   = /[a-z]/.test(p);
+                this.reqs.number  = /[0-9]/.test(p);
+                this.reqs.special = /[@#$%^&*]/.test(p);
+            },
+
+            get passwordValid() {
+                return Object.values(this.reqs).every(Boolean);
+            },
+
+            // ── Messages ──
+            showMsg(text, type) {
+                this.message = { text, type };
+                if (type === 'error') {
+                    setTimeout(() => { this.message = { text: '', type: '' }; }, 5000);
+                }
+            },
+
+            // ── OTP generator ──
+            generateOTP() {
+                return Math.floor(100000 + Math.random() * 900000).toString();
+            },
+
+            // ── Form submit (2-stage) ──
+            async handleSubmit() {
+                if (this.submitting) return;
+
+                // ── STAGE 1: Validate + send OTP ──
+                if (!this.otpSent) {
+                    // Domain check
+                    if (!this.emailValid) {
+                        this.showMsg('Only @isu.edu.ph email addresses are accepted.', 'error');
+                        return;
+                    }
+
+                    // Password check
+                    if (!this.passwordValid) {
+                        this.showMsg('Please meet all password requirements.', 'error');
+                        return;
+                    }
+
+                    this.submitting = true;
+                    this.message = { text: '', type: '' };
+
+                    // Check BEFORE sending OTP — query memberstest only
+                    try {
+                        const emailTrimmed = this.email.trim().toLowerCase();
+
+                        const { data: existing } = await supabaseClient
+                            .from('memberstest')
+                            .select('email, is_approved')
+                            .eq('email', emailTrimmed)
+                            .maybeSingle();
+
+                        if (existing?.is_approved === true) {
+                            this.showMsg('An account with this email already exists. Please log in instead.', 'error');
+                            this.submitting = false;
+                            return;
+                        }
+                        if (existing?.is_approved === false) {
+                            this.showMsg('A pending request with this email already exists. Please wait for admin approval.', 'error');
+                            this.submitting = false;
+                            return;
+                        }
+                    } catch(checkErr) {
+                        // Non-blocking — proceed even if check fails
+                        console.warn('Pre-check error:', checkErr.message);
+                    }
+
+                    this.savedFormData = {
+                        firstName: this.firstName.trim(),
+                        lastName:  this.lastName.trim(),
+                        userType:  this.userType,
+                        email:     this.email.trim()
+                    };
+
+                    this.generatedOtp = this.generateOTP();
+
+                    try {
+                        await emailjs.send(
+                            window.API_KEYS?.EMAILJS_SERVICE_ID_SIGNUP  || '',
+                            window.API_KEYS?.EMAILJS_TEMPLATE_ID_SIGNUP || '',
+                            {
+                                to_name:   `${this.savedFormData.firstName} ${this.savedFormData.lastName}`.trim(),
+                                to_email:  this.savedFormData.email,
+                                from_name: 'CentraNounceIT DeptHub',
+                                message:   this.generatedOtp
+                            }
+                        );
+                        this.showMsg('Verification code sent to your email.', 'success');
+                        this.otpSent = true;
+                        await this.$nextTick();
+                        document.querySelector('input[x-model="otpInput"]')?.focus();
+                    } catch(err) {
+                        console.error('EmailJS error:', err);
+                        this.showMsg('Failed to send verification code. Please check your email and try again.', 'error');
+                        this.generatedOtp  = null;
+                        this.savedFormData = {};
+                    } finally {
+                        this.submitting = false;
+                    }
+
+                // ── STAGE 2: Verify OTP + insert into memberstest ──
+                } else {
+                    if (this.otpInput.trim() !== this.generatedOtp) {
+                        this.showMsg('Invalid verification code. Please try again.', 'error');
+                        return;
+                    }
+
+                    this.submitting = true;
+
+                    try {
+                        // Insert directly into memberstest with is_approved = false
+                        // Admin panel will flip is_approved = true when approving
+                        const { error } = await supabaseClient
+                            .from('memberstest')
+                            .insert([{
+                                firstName:   this.savedFormData.firstName,
+                                lastName:    this.savedFormData.lastName,
+                                user_type:   this.savedFormData.userType,
+                                email:       this.savedFormData.email,
+                                is_approved: false,
+                                archived:    false
+                            }]);
+
+                        if (error) {
+                            // Handle duplicate email at DB level
+                            if (error.code === '23505' || error.message?.includes('duplicate') || error.message?.includes('already exists')) {
+                                throw new Error('An account with this email already exists. Please log in instead.');
+                            }
+                            throw error;
+                        }
+
+                        this.showMsg('Account request submitted! Please wait for admin approval before logging in.', 'success');
+
+                        // Reset everything
+                        this.firstName     = '';
+                        this.lastName      = '';
+                        this.userType      = '';
+                        this.email         = '';
+                        this.emailValid    = false;
+                        this.password      = '';
+                        this.otpInput      = '';
+                        this.otpSent       = false;
+                        this.generatedOtp  = null;
+                        this.savedFormData = {};
+                        this.reqs          = { length:false, upper:false, lower:false, number:false, special:false };
+
+                        setTimeout(() => { window.location.href = 'teststartuppage.html'; }, 3000);
+
+                    } catch(err) {
+                        console.error('Registration error:', err);
+                        this.showMsg(`Error: ${err.message}`, 'error');
+
+                        // If duplicate, fully reset so user can try a different email
+                        if (err.message.includes('already exists') || err.message.includes('duplicate')) {
+                            this.firstName     = '';
+                            this.lastName      = '';
+                            this.userType      = '';
+                            this.email         = '';
+                            this.emailValid    = false;
+                            this.password      = '';
+                            this.otpInput      = '';
+                            this.otpSent       = false;
+                            this.generatedOtp  = null;
+                            this.savedFormData = {};
+                            this.reqs          = { length:false, upper:false, lower:false, number:false, special:false };
+                        }
+                    } finally {
+                        this.submitting = false;
+                    }
+                }
+            }
+        };
+    }
+
+    // ════════════════════════════════════════
+    // GOOGLE TRANSLATE
+    // ════════════════════════════════════════
+    function applyTranslateColors() {
+        const dd = document.getElementById('google_translate_element'); if (!dd) return;
+        const combo = dd.querySelector('.goog-te-combo,select');
+        if (combo) {
+            combo.style.setProperty('color','#ffffff','important');
+            combo.style.setProperty('background-color','#1a1a1a','important');
+            combo.style.setProperty('border','1px solid #404040','important');
+            combo.style.setProperty('border-radius','8px','important');
+            combo.style.setProperty('padding','6px 10px','important');
+            combo.style.setProperty('font-weight','600','important');
+            combo.style.setProperty('font-family','Poppins,sans-serif','important');
+            combo.style.setProperty('font-size','.85rem','important');
+            combo.style.setProperty('outline','none','important');
+            combo.style.setProperty('cursor','pointer','important');
+            combo.querySelectorAll('option').forEach(o => {
+                o.style.setProperty('color','#ffffff','important');
+                o.style.setProperty('background-color','#1a1a1a','important');
+            });
+        }
+        dd.querySelectorAll('span,a,.goog-te-menu-value,.goog-te-menu-value span').forEach(el =>
+            el.style.setProperty('color','#ffffff','important')
+        );
+    }
+    function suppressTranslateBanner() {
+        function hide() {
+            document.querySelectorAll('.goog-te-banner-frame,.skiptranslate > iframe,#goog-gt-tt,.goog-te-balloon-frame').forEach(el => {
+                el.style.setProperty('display','none','important');
+                el.style.setProperty('height','0','important');
+                el.style.setProperty('visibility','hidden','important');
+            });
+            if (document.body.style.top && document.body.style.top !== '0px') {
+                document.body.style.setProperty('top','0','important');
+                document.body.style.setProperty('margin-top','0','important');
+            }
+        }
+        new MutationObserver(hide).observe(document.body, { attributes:true, attributeFilter:['style','class'], childList:true });
+        new MutationObserver(hide).observe(document.head, { childList:true });
+        hide();
+    }
+    function initTranslationToggle() {
+        const btn = document.getElementById('translate-toggle-btn');
+        const dd  = document.getElementById('google_translate_element');
+        if (!btn || !dd) return;
+        btn.addEventListener('click', e => {
+            e.stopPropagation();
+            const vis = dd.style.display === 'block';
+            dd.style.display = vis ? 'none' : 'block';
+            if (!vis) applyTranslateColors();
+        });
+        document.addEventListener('click', e => {
+            if (!e.target.closest('#translate-toggle-btn') && !e.target.closest('#google_translate_element'))
+                dd.style.display = 'none';
+        });
+        new MutationObserver(applyTranslateColors).observe(dd, { childList:true, subtree:true, attributes:true, attributeFilter:['style'] });
+        let tries = 0;
+        const poll = setInterval(() => { applyTranslateColors(); if (++tries >= 20) clearInterval(poll); }, 500);
+        suppressTranslateBanner();
+    }
+
+    // Call outside Alpine so it's guaranteed to run after DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initTranslationToggle);
+    } else {
+        initTranslationToggle();
+    }
+    </script>
+</body>
+</html>

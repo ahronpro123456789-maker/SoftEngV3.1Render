@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="CCSICTLOGOCROP.png">
+    <title>Edit Profile - CentraNounceIT</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="keys.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Google Translate (once) -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en', includedLanguages: 'en,tl',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+    <style>
+        /* ── CSS Variables: dark default ── */
+        :root {
+            --bg:         #000000;
+            --surface:    #0f0f0f;
+            --card:       #1a1a1a;
+            --border:     #2d5514;
+            --text:       #ffffff;
+            --text-muted: #b8d6a0;
+            --hover:      #1a1a1a;
+            --accent:     #9FE870;
+            --accent-dark:#7acc50;
+            --shadow-g:   rgba(159,232,112,0.2);
+        }
+        body.light-mode {
+            --bg:         #f5faf2;
+            --surface:    #ffffff;
+            --card:       #e8f5e0;
+            --border:     #c9e5ba;
+            --text:       #163300;
+            --text-muted: #2d5514;
+            --hover:      #e8f5e0;
+            --accent:     #7acc50;
+            --accent-dark:#5cad38;
+            --shadow-g:   rgba(122,204,80,0.2);
+        }
+
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            transition: background-color .3s, color .3s;
+        }
+
+        /* ── Form inputs ── */
+        .form-input {
+            width: 100%; padding: 12px 16px; border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--card); color: var(--text);
+            font-family: 'Inter', sans-serif; font-size: .95rem;
+            transition: all .3s; outline: none;
+        }
+        .form-input:focus { border-color: var(--accent); background: var(--surface); box-shadow: 0 0 0 4px rgba(159,232,112,.2); }
+        .form-input::placeholder { color: var(--text-muted); }
+
+        /* ── Video ── */
+        #cameraPreview {
+            border-radius: 12px; border: 2px solid var(--accent);
+            width: 100%; max-width: 360px; height: 270px;
+            background: #000; object-fit: cover;
+        }
+
+        /* ── Crop canvas ── */
+        #cropCanvas { max-width: 100%; border-radius: 8px; border: 2px solid var(--accent); cursor: crosshair; display: block; }
+
+        /* ── Google Translate banner suppression ── */
+        .goog-te-banner-frame,
+        .goog-te-banner-frame.skiptranslate,
+        .skiptranslate > iframe,
+        #goog-gt-tt,
+        .goog-te-balloon-frame { display:none !important; visibility:hidden !important; height:0 !important; }
+        body { top:0 !important; position:static !important; }
+        body.translated-ltr, body.translated-rtl { top:0 !important; margin-top:0 !important; }
+        .goog-te-gadget { font-family:'Inter',sans-serif !important; font-size:.85rem !important; line-height:1 !important; }
+        .goog-te-gadget-simple { background-color:var(--card) !important; border:1px solid var(--border) !important; border-radius:8px !important; padding:6px 10px !important; }
+        .goog-te-gadget-simple .goog-te-menu-value,
+        .goog-te-gadget-simple span,
+        .goog-te-gadget-simple a { color:var(--text) !important; font-weight:600 !important; background:none !important; }
+        .goog-te-gadget-icon { display:none !important; }
+        #google_translate_element select, .goog-te-combo { background-color:var(--card) !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:8px !important; padding:6px 10px !important; font-family:'Inter',sans-serif !important; font-size:.85rem !important; font-weight:600 !important; outline:none !important; cursor:pointer !important; }
+        #google_translate_element select option, .goog-te-combo option { background-color:var(--card) !important; color:var(--text) !important; }
+
+        /* ── Translate dropdown ── */
+        .translate-dropdown { position:fixed; bottom:90px; right:30px; background:var(--surface); border:2px solid var(--accent); border-radius:12px; padding:8px; box-shadow:0 8px 20px rgba(0,0,0,.2); z-index:998; }
+
+        /* ── Chatbot dots ── */
+        .dot { animation:dotBounce 1.4s infinite ease-in-out both; }
+        .dot:nth-child(1){animation-delay:-.32s;}
+        .dot:nth-child(2){animation-delay:-.16s;}
+        @keyframes dotBounce { 0%,80%,100%{transform:scale(0)} 40%{transform:scale(1)} }
+        [x-cloak] { display:none !important; }
+
+        /* ── File input styling ── */
+        input[type="file"]::file-selector-button {
+            background: var(--accent); color: #000; border: none; border-radius: 8px;
+            padding: 8px 16px; cursor: pointer; font-weight: 700; font-size: .9rem;
+            transition: background .2s; margin-right: 12px;
+        }
+        input[type="file"]::file-selector-button:hover { background: var(--accent-dark); }
+        input[type="file"] { color: var(--text); }
+    </style>
+</head>
+
+<!-- ══════════ ROOT ALPINE COMPONENT ══════════ -->
+<body class="min-h-screen" x-data="profileApp()" x-init="init()">
+
+    <!-- ── Top bar ── -->
+    <div class="flex items-center justify-between p-4 sm:p-6">
+        <a href="faculty_Dashboard.html"
+           class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border font-semibold text-sm transition-all duration-300 hover:-translate-y-0.5"
+           style="background:var(--surface); color:var(--text-muted); border-color:var(--border);"
+           onmouseover="this.style.color='var(--accent)';this.style.borderColor='var(--accent)';"
+           onmouseout="this.style.color='var(--text-muted)';this.style.borderColor='var(--border)';">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+        <button @click="toggleTheme()" id="theme-toggle-btn"
+            class="px-4 py-2.5 rounded-xl border font-semibold text-sm flex items-center gap-2 transition-all duration-300 hover:-translate-y-0.5"
+            style="background:var(--surface); color:var(--text-muted); border-color:var(--border);">
+            <i class="fas" :class="isDark ? 'fa-moon' : 'fa-sun'"></i>
+        </button>
+    </div>
+
+    <!-- ── Main form card ── -->
+    <div class="flex items-start justify-center px-4 pb-32 pt-4">
+        <div class="w-full max-w-[480px] rounded-2xl p-8 sm:p-10 flex flex-col gap-6 border shadow-[0_20px_60px_rgba(0,0,0,.5)]"
+             style="background:var(--surface); border-color:var(--border);">
+
+            <h2 class="text-3xl font-bold text-center" style="color:var(--accent);">Edit Profile</h2>
+
+            <form @submit.prevent="submitForm()" autocomplete="off" class="flex flex-col gap-5">
+
+                <!-- Avatar section -->
+                <div class="flex items-start gap-5">
+                    <div class="flex flex-col items-center gap-2 flex-shrink-0">
+                        <img :src="avatarPreviewUrl"
+                             class="w-20 h-20 rounded-full object-cover border-2"
+                             style="border-color:var(--accent); background:var(--card);"
+                             alt="Avatar">
+                        <span x-show="faceDetected"
+                              class="text-xs font-bold px-2.5 py-1 rounded-full text-black"
+                              style="background:var(--accent);">✓ Face Detected</span>
+                    </div>
+                    <div class="flex flex-col gap-3 flex-grow">
+                        <input type="file" id="editAvatarFile" accept="image/*"
+                               @change="onFileSelected($event)"
+                               class="w-full text-sm rounded-xl border px-3 py-2"
+                               style="background:var(--card); border-color:var(--border);">
+                        <button type="button" @click="openCamera()"
+                            x-show="!cameraOpen"
+                            class="px-4 py-2.5 rounded-xl font-bold text-sm text-black transition-all duration-300 hover:-translate-y-0.5"
+                            style="background:linear-gradient(135deg,var(--accent),var(--accent-dark)); box-shadow:0 4px 12px var(--shadow-g);">
+                            <i class="fas fa-camera mr-2"></i>Use Camera
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Camera area -->
+                <div x-show="cameraOpen" class="flex flex-col gap-3">
+                    <video id="cameraPreview" autoplay playsinline></video>
+                    <div class="flex gap-3">
+                        <button type="button" @click="capturePhoto()"
+                            class="flex-1 px-4 py-2.5 rounded-xl font-bold text-sm text-black transition-all duration-300 hover:-translate-y-0.5"
+                            style="background:linear-gradient(135deg,var(--accent),var(--accent-dark));">
+                            <i class="fas fa-circle mr-2"></i>Capture
+                        </button>
+                        <button type="button" @click="closeCamera()"
+                            class="flex-1 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 border"
+                            style="background:var(--card); color:var(--text-muted); border-color:var(--border);">
+                            <i class="fas fa-times mr-2"></i>Close
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Text fields -->
+                <div class="flex flex-col gap-1">
+                    <label class="text-sm font-semibold" style="color:var(--text);">Full Name *</label>
+                    <input type="text" x-model="fullName" placeholder="Enter your full name" required class="form-input">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-sm font-semibold" style="color:var(--text);">Email *</label>
+                    <input type="email" x-model="email" placeholder="Enter your email" required class="form-input">
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-sm font-semibold" style="color:var(--text);">User Type *</label>
+                    <select x-model="userType" class="form-input">
+                        <option value="Officer">Officer</option>
+                        <option value="Faculty">Faculty</option>
+                    </select>
+                </div>
+
+                <!-- Status message -->
+                <p x-show="statusMsg" x-text="statusMsg"
+                   :class="statusIsError ? 'text-red-400' : 'text-green-400'"
+                   class="text-sm font-medium text-center"></p>
+
+                <button type="submit" :disabled="saving"
+                    class="w-full py-4 rounded-xl font-bold text-lg text-black transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style="background:linear-gradient(135deg,var(--accent),var(--accent-dark)); box-shadow:0 4px 12px var(--shadow-g);">
+                    <span x-text="saving ? 'Saving...' : 'Save Changes'"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══ ERROR MODAL — No face detected ══ -->
+    <div x-show="showErrorModal"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+         style="z-index:2000;">
+        <div class="w-full max-w-[500px] rounded-2xl p-8 text-center border shadow-[0_20px_60px_rgba(0,0,0,.5)]"
+             style="background:var(--surface); border-color:#ef4444;">
+            <h3 class="text-2xl font-bold text-red-500 mb-4">⚠️ No Face Detected</h3>
+            <p class="text-base mb-4 leading-relaxed" style="color:var(--text);">
+                No face detected in the uploaded image. Please upload a clear photo of your face.
+            </p>
+            <img :src="errorImageUrl" alt="Rejected image"
+                 class="max-w-full max-h-[280px] rounded-xl mx-auto mb-5 object-contain border-2 border-red-500">
+            <div class="flex gap-3 justify-center flex-wrap">
+                <button @click="showErrorModal = false"
+                    class="px-6 py-3 rounded-xl font-bold text-black transition-all duration-300 hover:-translate-y-0.5"
+                    style="background:linear-gradient(135deg,var(--accent),var(--accent-dark));">
+                    Try Again
+                </button>
+                <button @click="retryCamera()"
+                    class="px-6 py-3 rounded-xl font-bold text-black transition-all duration-300 hover:-translate-y-0.5 bg-orange-500 hover:bg-orange-400">
+                    🔄 Retry Camera
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ CROP MODAL ══ -->
+    <div x-show="showCropModal"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+         style="z-index:2000;">
+        <div class="w-full max-w-[580px] rounded-2xl p-8 text-center border shadow-[0_20px_60px_rgba(0,0,0,.5)]"
+             style="background:var(--surface); border-color:var(--accent);">
+            <h3 class="text-2xl font-bold mb-5" style="color:var(--accent);">Crop Your Image</h3>
+            <p class="text-sm mb-4" style="color:var(--text-muted);">Drag on the image to select the crop area</p>
+            <div class="max-w-[500px] mx-auto mb-5">
+                <canvas id="cropCanvas"></canvas>
+            </div>
+            <div class="flex gap-3 justify-center flex-wrap">
+                <button @click="cancelCrop()"
+                    class="px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 border"
+                    style="background:var(--card); color:var(--text-muted); border-color:var(--border);">
+                    Cancel
+                </button>
+                <button @click="retryCamera()"
+                    class="px-6 py-3 rounded-xl font-bold text-sm text-black transition-all duration-300 bg-orange-500 hover:bg-orange-400">
+                    🔄 Retry Camera
+                </button>
+                <button @click="applyCrop()"
+                    class="px-6 py-3 rounded-xl font-bold text-sm text-black transition-all duration-300 hover:-translate-y-0.5"
+                    style="background:linear-gradient(135deg,var(--accent),var(--accent-dark));">
+                    Apply Crop
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ CHATBOT (Alpine sub-component) — bottom-[160px] right-[30px] ══ -->
+    <div x-data="initChatbot()" x-cloak>
+        <button @click="isOpen = !isOpen"
+            class="fixed bottom-[160px] right-[30px] w-[50px] h-[50px] rounded-full flex items-center justify-center text-black cursor-pointer z-[999] border-2 text-xl transition-all duration-300 hover:scale-110 active:scale-95"
+            style="background:linear-gradient(135deg,#9FE870,#8AD95E); border-color:#9FE870; box-shadow:0 4px 12px rgba(159,232,112,.4);">
+            <i x-show="!isOpen" class="fa-solid fa-robot"></i>
+            <i x-show="isOpen"  class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div x-show="isOpen"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-90 translate-y-5"
+             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+             x-transition:leave-end="opacity-0 scale-90 translate-y-5"
+             class="fixed bottom-[240px] right-[30px] w-[90vw] max-w-[400px] max-h-[calc(100vh-260px)] min-h-[300px] rounded-3xl flex flex-col overflow-hidden z-[998] border"
+             style="background:var(--bg); border-color:var(--border); box-shadow:0 20px 60px rgba(0,0,0,.5);">
+            <div class="px-4 py-3 border-b flex items-center justify-between gap-3 flex-shrink-0"
+                 style="background:var(--surface); border-color:var(--border);">
+                <div>
+                    <h2 class="font-bold text-sm tracking-wide" style="color:var(--text);">Chatbot</h2>
+                    <p class="text-[11px] font-medium" style="color:var(--accent);">Your Campus Assistant</p>
+                </div>
+                <button @click="isOpen = false" class="hover:opacity-70 w-6 h-6 flex items-center justify-center" style="color:var(--text-muted);">
+                    <i class="fa-solid fa-minus text-sm"></i>
+                </button>
+            </div>
+            <div id="chatbot-messages-container" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3" style="background:var(--bg);">
+                <template x-for="(msg, index) in messages" :key="index">
+                    <div :style="msg.role==='user'
+                        ? 'background:linear-gradient(135deg,#9FE870,#8AD95E);color:#000;border:1px solid #9FE870;border-radius:16px 16px 4px 16px;margin-left:auto;max-width:85%;padding:12px;font-size:.875rem;line-height:1.5;'
+                        : 'background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:16px 16px 16px 4px;margin-right:auto;max-width:85%;padding:12px;font-size:.875rem;line-height:1.5;'">
+                        <p class="whitespace-pre-wrap" x-text="msg.content"></p>
+                    </div>
+                </template>
+                <div x-show="isLoading" class="flex gap-1 p-3 border self-start flex-shrink-0"
+                     style="border-radius:16px 16px 16px 4px; background:var(--card); border-color:var(--border);">
+                    <div class="dot w-1.5 h-1.5 rounded-full" style="background:var(--accent);"></div>
+                    <div class="dot w-1.5 h-1.5 rounded-full" style="background:var(--accent);"></div>
+                    <div class="dot w-1.5 h-1.5 rounded-full" style="background:var(--accent);"></div>
+                </div>
+            </div>
+            <div class="p-4 border-t flex-shrink-0" style="background:var(--surface); border-color:var(--border);">
+                <form @submit.prevent="sendMessage()" class="flex gap-2 items-center">
+                    <input type="text" x-model="userInput" placeholder="Ask about profile editing..."
+                        class="flex-1 px-4 py-2.5 rounded-xl border text-[.875rem] outline-none transition-all"
+                        style="background:var(--card); border-color:var(--border); color:var(--text);"
+                        onfocus="this.style.borderColor='var(--accent)';"
+                        onblur="this.style.borderColor='var(--border)';">
+                    <button type="submit" :disabled="!userInput.trim() || isLoading"
+                        class="w-10 h-10 rounded-xl flex items-center justify-center border-none cursor-pointer transition-all hover:scale-105 disabled:opacity-50 flex-shrink-0"
+                        style="background:linear-gradient(135deg,#9FE870,#8AD95E); color:#000; box-shadow:0 4px 12px rgba(159,232,112,.3);">
+                        <i class="fa-solid fa-paper-plane text-xs"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ TRANSLATE — bottom-[30px] right-[30px] ══ -->
+    <button id="translate-toggle-btn"
+        class="notranslate fixed bottom-[30px] right-[30px] z-[999] w-[50px] h-[50px] rounded-full flex items-center justify-center cursor-pointer text-xl text-black"
+        style="background:var(--accent); border:2px solid var(--accent); box-shadow:0 4px 12px rgba(159,232,112,.4); transition:all .3s;"
+        translate="no">
+        <i class="fas fa-language"></i>
+    </button>
+    <div id="google_translate_element" class="notranslate translate-dropdown" translate="no" style="display:none;"></div>
+
+    <script>
+    // ════════════════════════════════════════
+    // SUPABASE — from keys.js
+    // ════════════════════════════════════════
+    const supabaseClient = supabase.createClient(
+        window.API_KEYS?.SUPABASE_URL      || '',
+        window.API_KEYS?.SUPABASE_ANON_KEY || ''
+    );
+
+    const DEFAULT_AVATAR = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="82" height="82"%3E%3Ccircle cx="41" cy="41" r="40" fill="%231a1a1a" stroke="%239FE870" stroke-width="2"/%3E%3Ctext x="41" y="50" font-size="24" fill="%239FE870" text-anchor="middle" font-family="Arial"%3E%3F%3C/text%3E%3C/svg%3E';
+
+    // ════════════════════════════════════════
+    // MAIN ALPINE COMPONENT
+    // ════════════════════════════════════════
+    function profileApp() {
+        return {
+            // ── Reactive state ──
+            isDark:          true,
+            fullName:        '',
+            email:           '',
+            userType:        'Officer',
+            avatarPreviewUrl: DEFAULT_AVATAR,
+            faceDetected:    false,
+            finalAvatarDataUrl: DEFAULT_AVATAR,
+            currentUserProfile: null,
+            saving:          false,
+            statusMsg:       '',
+            statusIsError:   false,
+
+            // Camera state
+            cameraOpen:      false,
+            stream:          null,
+
+            // Crop modal state
+            showCropModal:   false,
+            cropImageData:   null,
+            cropStartX: 0, cropStartY: 0,
+            cropEndX: 0,   cropEndY: 0,
+            isDragging:      false,
+
+            // Error modal state
+            showErrorModal:  false,
+            errorImageUrl:   '',
+
+            // Face API
+            modelsLoaded:    false,
+
+            // ── Init ──
+            async init() {
+                this.loadTheme();
+                this.checkAuth();
+                await this.loadUserProfile();
+                this.setupCropCanvas();
+                // Translate is initialised via DOMContentLoaded below (outside Alpine)
+            },
+
+            // ── Theme ──
+            loadTheme() {
+                const saved = localStorage.getItem('theme') || 'dark';
+                this.isDark = saved === 'dark';
+                if (!this.isDark) document.body.classList.add('light-mode');
+            },
+            toggleTheme() {
+                this.isDark = !this.isDark;
+                document.body.classList.toggle('light-mode', !this.isDark);
+                localStorage.setItem('theme', this.isDark ? 'dark' : 'light');
+                setTimeout(applyTranslateColors, 50);
+            },
+
+            // ── Auth ──
+            checkAuth() {
+                const lu = localStorage.getItem('loggedInUser');
+                if (!lu) { window.location.href = 'faculty_login.html'; return; }
+                try { JSON.parse(lu); }
+                catch { localStorage.removeItem('loggedInUser'); window.location.href = 'faculty_login.html'; }
+            },
+
+            // ── Load profile ──
+            async loadUserProfile() {
+                const lu = JSON.parse(localStorage.getItem('loggedInUser') || '{}');
+                if (!lu?.email) { window.location.href = 'faculty_login.html'; return; }
+                try {
+                    const { data, error } = await supabaseClient.from('members')
+                        .select('id,full_name,email,user_type,avatar_url')
+                        .eq('email', lu.email).single();
+                    if (error) throw error;
+                    this.currentUserProfile = data;
+                    this.fullName = data.full_name || '';
+                    this.email    = data.email     || '';
+                    this.userType = data.user_type  || 'Officer';
+                    if (data.avatar_url) {
+                        this.avatarPreviewUrl  = data.avatar_url;
+                        this.finalAvatarDataUrl = data.avatar_url;
+                    }
+                } catch(err) {
+                    this.showStatus('Failed to load profile: ' + err.message, true);
+                }
+            },
+
+            // ── Status helper ──
+            showStatus(msg, isError = false) {
+                this.statusMsg = msg; this.statusIsError = isError;
+                if (!isError) setTimeout(() => { this.statusMsg = ''; }, 4000);
+            },
+
+            // ── Face API ──
+            async loadFaceApiModels() {
+                if (!this.modelsLoaded) {
+                    await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model');
+                    this.modelsLoaded = true;
+                }
+            },
+
+            // ── File selected ──
+            onFileSelected(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = evt => { this.openCropModal(evt.target.result); };
+                reader.readAsDataURL(file);
+                e.target.value = '';
+            },
+
+            // ── Camera ──
+            async openCamera() {
+                await this.loadFaceApiModels();
+                this.cameraOpen = true;
+                await this.$nextTick();
+                try {
+                    this.stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    document.getElementById('cameraPreview').srcObject = this.stream;
+                } catch(err) {
+                    this.showStatus('Unable to access camera: ' + err.message, true);
+                    this.cameraOpen = false;
+                }
+            },
+            closeCamera() {
+                this.cameraOpen = false;
+                if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); this.stream = null; }
+            },
+            capturePhoto() {
+                const video = document.getElementById('cameraPreview');
+                const cv = document.createElement('canvas');
+                cv.width = video.videoWidth || 360; cv.height = video.videoHeight || 270;
+                cv.getContext('2d').drawImage(video, 0, 0, cv.width, cv.height);
+                const captured = cv.toDataURL('image/png');
+                this.closeCamera();
+                this.openCropModal(captured);
+            },
+            async retryCamera() {
+                this.showCropModal  = false;
+                this.showErrorModal = false;
+                this.cropImageData  = null;
+                await this.openCamera();
+            },
+
+            // ── Crop modal ──
+            openCropModal(imageUrl) {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.getElementById('cropCanvas');
+                    const ctx    = canvas.getContext('2d');
+                    const maxW   = 500, scale = Math.min(1, maxW / img.width);
+                    canvas.width  = img.width  * scale;
+                    canvas.height = img.height * scale;
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    this.cropImageData = { img, scale };
+                    this.cropStartX = canvas.width  * .2; this.cropStartY = canvas.height * .2;
+                    this.cropEndX   = canvas.width  * .8; this.cropEndY   = canvas.height * .8;
+                    this.drawCropOverlay();
+                    this.showCropModal = true;
+                };
+                img.src = imageUrl;
+            },
+            drawCropOverlay() {
+                const canvas = document.getElementById('cropCanvas');
+                if (!canvas || !this.cropImageData) return;
+                const ctx = canvas.getContext('2d');
+                const { img, scale } = this.cropImageData;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'rgba(0,0,0,.5)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.fillStyle = 'rgba(0,0,0,1)';
+                ctx.fillRect(this.cropStartX, this.cropStartY, this.cropEndX - this.cropStartX, this.cropEndY - this.cropStartY);
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.drawImage(img,
+                    this.cropStartX/scale, this.cropStartY/scale,
+                    (this.cropEndX-this.cropStartX)/scale, (this.cropEndY-this.cropStartY)/scale,
+                    this.cropStartX, this.cropStartY,
+                    this.cropEndX-this.cropStartX, this.cropEndY-this.cropStartY
+                );
+                ctx.strokeStyle = '#9FE870'; ctx.lineWidth = 3;
+                ctx.strokeRect(this.cropStartX, this.cropStartY, this.cropEndX-this.cropStartX, this.cropEndY-this.cropStartY);
+            },
+            cancelCrop() {
+                this.showCropModal = false;
+                this.cropImageData = null;
+            },
+            async applyCrop() {
+                const { img, scale } = this.cropImageData;
+                const cv = document.createElement('canvas'), ctx = cv.getContext('2d');
+                const s = 1/scale;
+                const srcX = this.cropStartX*s, srcY = this.cropStartY*s;
+                const srcW = (this.cropEndX-this.cropStartX)*s, srcH = (this.cropEndY-this.cropStartY)*s;
+                cv.width = srcW; cv.height = srcH;
+                ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, srcW, srcH);
+                const croppedUrl = cv.toDataURL('image/png');
+
+                await this.loadFaceApiModels();
+                const testImg = new Image(); testImg.src = croppedUrl;
+                testImg.onload = async () => {
+                    const detections = await faceapi.detectAllFaces(testImg, new faceapi.TinyFaceDetectorOptions());
+                    if (!detections.length) {
+                        this.showCropModal  = false;
+                        this.errorImageUrl  = croppedUrl;
+                        this.showErrorModal = true;
+                        return;
+                    }
+                    this.avatarPreviewUrl   = croppedUrl;
+                    this.finalAvatarDataUrl = croppedUrl;
+                    this.faceDetected       = true;
+                    this.showCropModal      = false;
+                    this.cropImageData      = null;
+                };
+            },
+
+            // ── Crop canvas drag ── (set up once after init)
+            setupCropCanvas() {
+                this.$nextTick(() => {
+                    const canvas = document.getElementById('cropCanvas');
+                    if (!canvas) return;
+
+                    const getPos = (e, rect) => {
+                        const src = e.touches ? e.touches[0] : e;
+                        return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+                    };
+
+                    const onStart = e => {
+                        if (!this.showCropModal) return;
+                        e.preventDefault();
+                        const pos = getPos(e, canvas.getBoundingClientRect());
+                        this.cropStartX = pos.x; this.cropStartY = pos.y;
+                        this.cropEndX   = pos.x; this.cropEndY   = pos.y;
+                        this.isDragging = true;
+                    };
+                    const onMove = e => {
+                        if (!this.isDragging) return;
+                        e.preventDefault();
+                        const pos = getPos(e, canvas.getBoundingClientRect());
+                        this.cropEndX = pos.x; this.cropEndY = pos.y;
+                        this.drawCropOverlay();
+                    };
+                    const onEnd = () => {
+                        this.isDragging = false;
+                        if (this.cropStartX > this.cropEndX) [this.cropStartX, this.cropEndX] = [this.cropEndX, this.cropStartX];
+                        if (this.cropStartY > this.cropEndY) [this.cropStartY, this.cropEndY] = [this.cropEndY, this.cropStartY];
+                    };
+
+                    canvas.addEventListener('mousedown',  onStart);
+                    canvas.addEventListener('mousemove',  onMove);
+                    canvas.addEventListener('mouseup',    onEnd);
+                    canvas.addEventListener('touchstart', onStart, { passive: false });
+                    canvas.addEventListener('touchmove',  onMove,  { passive: false });
+                    canvas.addEventListener('touchend',   onEnd);
+                });
+            },
+
+            // ── Form submit ──
+            async submitForm() {
+                if (!this.fullName.trim() || !this.email.trim()) {
+                    this.showStatus('Please fill in all required fields.', true); return;
+                }
+                if (!this.currentUserProfile) {
+                    this.showStatus('Profile not loaded. Please refresh.', true); return;
+                }
+                this.saving = true; this.statusMsg = '';
+
+                try {
+                    let avatarUrl = this.currentUserProfile.avatar_url;
+
+                    // Upload new avatar only if face was detected and it's a new image
+                    const hasNew = this.faceDetected
+                        && this.finalAvatarDataUrl !== DEFAULT_AVATAR
+                        && this.finalAvatarDataUrl !== this.currentUserProfile.avatar_url;
+
+                    if (hasNew) {
+                        const res = await fetch(this.finalAvatarDataUrl);
+                        const blob = await res.blob();
+                        const fileName = `${this.currentUserProfile.id}_${Date.now()}.png`;
+                        const { error: upErr } = await supabaseClient.storage
+                            .from('Avatar').upload(fileName, blob, { upsert: true, contentType: 'image/png' });
+                        if (upErr) throw new Error('Avatar upload failed: ' + upErr.message);
+                        const { data: urlData } = supabaseClient.storage.from('Avatar').getPublicUrl(fileName);
+                        avatarUrl = urlData?.publicUrl || avatarUrl;
+                    }
+
+                    const { error } = await supabaseClient.from('members').update({
+                        full_name:  this.fullName.trim(),
+                        email:      this.email.trim(),
+                        user_type:  this.userType,
+                        avatar_url: avatarUrl
+                    }).eq('id', this.currentUserProfile.id);
+                    if (error) throw new Error('Profile update failed: ' + error.message);
+
+                    // Update localStorage
+                    const lu = JSON.parse(localStorage.getItem('loggedInUser'));
+                    lu.email = this.email.trim(); lu.full_name = this.fullName.trim();
+                    localStorage.setItem('loggedInUser', JSON.stringify(lu));
+
+                    this.showStatus('✅ Profile updated successfully!', false);
+                    setTimeout(() => { window.location.href = 'faculty_Dashboard.html'; }, 1200);
+
+                } catch(err) {
+                    this.showStatus('Failed: ' + err.message, true);
+                } finally {
+                    this.saving = false;
+                    this.closeCamera();
+                }
+            }
+        };
+    }
+
+    // ════════════════════════════════════════
+    // GOOGLE TRANSLATE
+    // ════════════════════════════════════════
+    function getThemeColors() {
+        const isLight = document.body.classList.contains('light-mode');
+        return { text:isLight?'#163300':'#ffffff', bg:isLight?'#e8f5e0':'#1a1a1a', border:isLight?'#c9e5ba':'#2d5514' };
+    }
+    function applyTranslateColors() {
+        const dd = document.getElementById('google_translate_element'); if (!dd) return;
+        const { text, bg, border } = getThemeColors();
+        const combo = dd.querySelector('.goog-te-combo,select');
+        if (combo) { combo.style.setProperty('color',text,'important'); combo.style.setProperty('background-color',bg,'important'); combo.style.setProperty('border',`1px solid ${border}`,'important'); combo.style.setProperty('border-radius','8px','important'); combo.style.setProperty('padding','6px 10px','important'); combo.style.setProperty('font-weight','600','important'); combo.style.setProperty('font-family','Inter,sans-serif','important'); combo.style.setProperty('font-size','.85rem','important'); combo.style.setProperty('outline','none','important'); combo.style.setProperty('cursor','pointer','important'); combo.querySelectorAll('option').forEach(o=>{ o.style.setProperty('color',text,'important'); o.style.setProperty('background-color',bg,'important'); }); }
+        dd.querySelectorAll('span,a,.goog-te-menu-value,.goog-te-menu-value span').forEach(el => el.style.setProperty('color',text,'important'));
+    }
+    function suppressTranslateBanner() {
+        function hide() { document.querySelectorAll('.goog-te-banner-frame,.skiptranslate > iframe,#goog-gt-tt,.goog-te-balloon-frame').forEach(el=>{ el.style.setProperty('display','none','important'); el.style.setProperty('height','0','important'); el.style.setProperty('visibility','hidden','important'); }); if (document.body.style.top && document.body.style.top!=='0px') { document.body.style.setProperty('top','0','important'); document.body.style.setProperty('margin-top','0','important'); } }
+        new MutationObserver(hide).observe(document.body, { attributes:true, attributeFilter:['style','class'], childList:true });
+        new MutationObserver(hide).observe(document.head, { childList:true });
+        hide();
+    }
+    function initTranslationToggle() {
+        const btn = document.getElementById('translate-toggle-btn');
+        const dd  = document.getElementById('google_translate_element');
+        if (!btn || !dd) return;
+        btn.addEventListener('click', e => { e.stopPropagation(); const vis = dd.style.display==='block'; dd.style.display = vis?'none':'block'; if(!vis) applyTranslateColors(); });
+        document.addEventListener('click', e => { if (!e.target.closest('#translate-toggle-btn') && !e.target.closest('#google_translate_element')) dd.style.display='none'; });
+        // Re-apply colors when theme button is clicked
+        const themeBtn = document.getElementById('theme-toggle-btn');
+        if (themeBtn) themeBtn.addEventListener('click', () => setTimeout(applyTranslateColors, 50));
+        new MutationObserver(applyTranslateColors).observe(dd, { childList:true, subtree:true, attributes:true, attributeFilter:['style'] });
+        let tries=0; const poll=setInterval(()=>{ applyTranslateColors(); if(++tries>=20) clearInterval(poll); }, 500);
+        suppressTranslateBanner();
+    }
+
+    // ════════════════════════════════════════
+    // CHATBOT — separate Alpine sub-component
+    // ════════════════════════════════════════
+    function initChatbot() {
+        return {
+            isOpen: false, userInput: '', isLoading: false,
+            sessionId: 'session_'+Date.now()+'_'+Math.random().toString(36).substr(2,9),
+            messages: [{ role:'assistant', content:"Hi! I can help you with profile editing, face detection tips, camera troubleshooting, or general campus questions. What would you like to know?" }],
+
+            async sendMessage() {
+                if (!this.userInput.trim()) return;
+                this.messages.push({ role:'user', content:this.userInput });
+                const input = this.userInput; this.userInput=''; this.isLoading=true; this.scrollToBottom();
+                let replyAppended = false;
+                try {
+                    const sysMsg = { role:'system', content:`You are the CentraNounceIT Profile Assistant helping faculty staff edit their profile.
+You can help with: how to use the face detection feature, how to crop photos correctly, camera access troubleshooting, uploading avatars, and general campus questions.
+Current page: Edit Profile with Face Detection.
+Be concise, helpful, and professional.` };
+                    const apiKey = window.API_KEYS?.GROQ_API_KEY || '';
+                    const msgs   = [sysMsg, ...this.messages.map(m=>({ role:m.role, content:m.content }))];
+                    const models = ['llama-3.3-70b-versatile','llama-3.1-8b-instant','mixtral-8x7b-32768','llama3-8b-8192'];
+                    let response = null, lastErr = '';
+                    for (const model of models) {
+                        try {
+                            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`}, body:JSON.stringify({ model, messages:msgs, temperature:0.7, max_tokens:1024 }) });
+                            if (res.ok) { response=res; break; }
+                            lastErr = await res.text();
+                            if (res.status!==429 && res.status!==413) break;
+                        } catch(fe) { lastErr=fe.message; }
+                    }
+                    if (!response) { const wm=lastErr.match(/try again in (\d+m[\d.]+s|\d+s)/i); throw new Error(wm?`RATE_LIMITED:${wm[1]}`:'API_FAILED'); }
+                    const data  = await response.json();
+                    const reply = data.choices[0].message.content;
+                    this.messages.push({ role:'assistant', content:reply });
+                    replyAppended = true;
+                    supabaseClient.from('chat_history').insert([{ session_id:this.sessionId, user_message:input, assistant_response:reply, has_security_concern:false, created_at:new Date().toISOString() }]).then(({error})=>{ if(error) console.warn('Chat history save error:',error.message); });
+                } catch(err) {
+                    if (!replyAppended) { let msg='Sorry, I encountered an error.'; if(err.message?.startsWith('RATE_LIMITED:')) msg=`⏳ Rate limited. Try again in ${err.message.replace('RATE_LIMITED:','')}`; this.messages.push({role:'assistant',content:msg}); }
+                } finally { this.isLoading=false; this.scrollToBottom(); }
+            },
+
+            scrollToBottom() {
+                this.$nextTick(()=>{ const c=document.getElementById('chatbot-messages-container'); if(c) c.scrollTop=c.scrollHeight; });
+            }
+        };
+    }
+
+    // ── Call translate OUTSIDE Alpine so the DOM is guaranteed ready ──
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initTranslationToggle);
+    } else {
+        initTranslationToggle();
+    }
+    </script>
+</body>
+</html>
