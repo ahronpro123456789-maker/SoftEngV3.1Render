@@ -6,7 +6,7 @@
     <link rel="icon" type="image/x-icon" href="CCSICTLOGOCROP.png">
     <title>DCH Student Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="UI.js"></script>
+    <script src="keys.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="text/javascript">
@@ -770,25 +770,39 @@ INSTRUCTIONS:
 
                     const apiKey = window.API_KEYS?.GROQ_API_KEY || '';
                     const msgs   = [sysMsg, ...this.messages.map(m=>({role:m.role,content:m.content}))];
-                    const models = ['llama-3.3-70b-versatile','llama-3.1-8b-instant','mixtral-8x7b-32768','llama3-8b-8192'];
-                    let response = null, lastErr = '';
+                    // Updated model list (removed llama3-8b-8192)
+                    const models  = ['llama-3.3-70b-versatile','llama-3.1-8b-instant','mixtral-8x7b-32768'];
+                    let response  = null, lastError = '';
 
-                    for (const model of models) {
-                        try {
-                            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                                method: 'POST',
-                                headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${apiKey}` },
-                                body: JSON.stringify({ model, messages:msgs, temperature:0.7, max_tokens:1024 })
-                            });
-                            if (res.ok) { response=res; break; }
-                            lastErr = await res.text();
-                            if (res.status!==429 && res.status!==413) break;
-                        } catch(fe) { lastErr=fe.message; }
+                    // Try up to 7 keys
+                    for (let keyAttempt = 0; keyAttempt < 7; keyAttempt++) {
+                        const apiKey = window.API_HELPERS.getGroqKey();
+                        
+                        for (const model of models) {
+                            try {
+                                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${apiKey}` },
+                                    body: JSON.stringify({ model, messages:msgs, temperature:0.7, max_tokens:1024 })
+                                });
+                                if (res.ok) { response=res; break; }
+                                lastError = await res.text();
+                                if (res.status !== 429 && res.status !== 413) break;
+                            } catch(fe) { lastError = fe.message; }
+                        }
+                        
+                        if (response) break; // Success! Exit key loop
+                        
+                        if (lastError.includes('429') || lastError.includes('rate limit')) {
+                            window.API_HELPERS.rotateGroqKey();
+                        } else {
+                            break; // Not a rate limit issue, stop trying
+                        }
                     }
 
                     if (!response) {
-                        const wm = lastErr.match(/try again in (\d+m[\d.]+s|\d+s)/i);
-                        throw new Error(wm ? `RATE_LIMITED:${wm[1]}` : 'API_FAILED');
+                        const wm = lastError.match(/try again in (\d+m[\d.]+s|\d+s)/i);
+                        throw new Error(wm ? `RATE_LIMITED:${wm[1]}` : `API_FAILED:${lastError}`);
                     }
 
                     const data  = await response.json();
