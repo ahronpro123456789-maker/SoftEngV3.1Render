@@ -515,86 +515,123 @@
         new CalendarApp();
 
         // ════════════════════════════════════════
-        // CHATBOT — Alpine.js (x-data="initChatbot()")
-        // ════════════════════════════════════════
-        function initChatbot() {
-            return {
-                isOpen: false,
-                userInput: '',
-                isLoading: false,
-                sessionId: 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2,9),
-                messages: [{ role:'assistant', content:'Hi! I can help you find announcements, check scheduled dates, and answer campus questions. What would you like to know?' }],
+    // CHATBOT — Alpine.js x-data (Calendar Version)
+    // ════════════════════════════════════════
+    function initChatbot() {
+        return {
+            isOpen: false,
+            userInput: '',
+            isLoading: false,
+            sessionId: 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2,9),
+            messages: [{
+                role: 'assistant',
+                content: 'Hi! Welcome to CentraNounceIT Hub. I can help you with announcements, events, deadlines, and campus information. What would you like to know?'
+            }],
 
-                async sendMessage() {
-                    if (!this.userInput.trim()) return;
-                    this.messages.push({ role:'user', content:this.userInput });
-                    const input = this.userInput;
-                    this.userInput = '';
-                    this.isLoading = true;
-                    this.scrollToBottom();
+            async sendMessage() {
+                if (!this.userInput.trim()) return;
+                this.messages.push({ role:'user', content:this.userInput });
+                const input = this.userInput;
+                this.userInput = '';
+                this.isLoading = true;
+                this.scrollToBottom();
 
-                    let replyAppended = false;
-                    try {
-                        const {data:recent} = await supabaseClient
-                            .from('announcements')
-                            .select('title,summary,category,scheduled_date,target_audience,posted_at,members:posted_by_user_id(full_name)')
-                            .eq('archived',false)
-                            .order('posted_at',{ascending:false,nullsFirst:false})
-                            .limit(15);
+                let replyAppended = false;
+                try {
+                    const [annCtx, sysCtx] = await Promise.all([
+                        this.fetchRelevantAnnouncements(input),
+                        this.fetchSystemInfo(input)
+                    ]);
 
-                        const opts={year:'numeric',month:'short',day:'numeric'};
-                        const ctx=(recent||[]).map((a,i)=>`[${i+1}] ${a.title}\nCategory:${a.category||'General'}\nPosted:${a.posted_at?new Date(a.posted_at).toLocaleDateString('en-US',opts):'N/A'}\nScheduled:${a.scheduled_date?new Date(a.scheduled_date).toLocaleDateString('en-US',opts):'N/A'}\nAudience:${a.target_audience||'All'}\nSummary:${a.summary||'N/A'}\nBy:${a.members?.full_name||'Unknown'}\n---`).join('\n')||'No announcements.';
+                    const sysMsg = {
+                        role: 'system',
+                        content: `You are the CentraNounceIT Hub Assistant, helping students find campus announcements and information.
+ANNOUNCEMENT COLUMNS: id, title, description, scheduled_date, target_audience, category, posted_by.
+IMPORTANT ORDERING: Announcements below are sorted by Posted At date, NEWEST FIRST.
+CURRENT ANNOUNCEMENTS DATABASE:\n${annCtx}\n
+SYSTEM INFORMATION:\n${sysCtx}\n
+INSTRUCTIONS: Answer based ONLY on the data above. Format dates readably. Be concise, helpful, and professional.`
+                    };
 
-                        const sysMsg = { role:'system', content:`You are the CentraNounceIT Calendar Assistant helping students view announcements.\nYou can help find announcements by date, category, or topic, and answer general campus questions.\n\nCURRENT ANNOUNCEMENTS (newest first):\n${ctx}\n\nBe concise and helpful. Highlight upcoming deadlines and emergencies.` };
-                        const apiKey = window.API_KEYS?.GROQ_API_KEY || '';
-                        const msgs   = [sysMsg, ...this.messages.map(m=>({role:m.role,content:m.content}))];
-                        const models = ['llama-3.3-70b-versatile','llama-3.1-8b-instant','mixtral-8x7b-32768','llama3-8b-8192'];
-                        let response = null, lastErr = '';
+                    const msgs   = [sysMsg, ...this.messages.map(m=>({role:m.role,content:m.content}))];
+                    const models  = ['llama-3.3-70b-versatile','llama-3.1-8b-instant','mixtral-8x7b-32768'];
+                    let response  = null, lastError = '';
 
+                    // 7-Key Rotation Loop
+                    for (let keyAttempt = 0; keyAttempt < 7; keyAttempt++) {
+                        const apiKey = window.API_HELPERS.getGroqKey();
+                        
                         for (const model of models) {
                             try {
-                                const res = await fetch('https://api.groq.com/openai/v1/chat/completions',{
-                                    method:'POST',
-                                    headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},
-                                    body:JSON.stringify({model,messages:msgs,temperature:0.7,max_tokens:1024})
+                                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${apiKey}` },
+                                    body: JSON.stringify({ model, messages:msgs, temperature:0.7, max_tokens:1024 })
                                 });
-                                if (res.ok){response=res;break;}
-                                lastErr=await res.text();
-                                if (res.status!==429&&res.status!==413) break;
-                            } catch(fe){lastErr=fe.message;}
+                                if (res.ok) { response=res; break; }
+                                lastError = await res.text();
+                                if (res.status !== 429 && res.status !== 413) break;
+                            } catch(fe) { lastError = fe.message; }
                         }
-
-                        if (!response) { const wm=lastErr.match(/try again in (\d+m[\d.]+s|\d+s)/i); throw new Error(wm?`RATE_LIMITED:${wm[1]}`:`API_FAILED`); }
-                        const data  = await response.json();
-                        if (!data.choices?.length) throw new Error('No choices from API');
-                        const reply = data.choices[0].message.content;
-                        this.messages.push({ role:'assistant', content:reply });
-                        replyAppended = true;
-
-                        supabaseClient.from('chat_history').insert([{
-                            session_id:this.sessionId, user_message:input,
-                            assistant_response:reply, has_security_concern:false,
-                            created_at:new Date().toISOString()
-                        }]).then(({error})=>{ if(error) console.warn('Chat history save error:',error.message); });
-
-                    } catch(err) {
-                        if (!replyAppended) {
-                            let msg = 'Sorry, I encountered an error. Please try again.';
-                            if (err.message?.startsWith('RATE_LIMITED:')) msg=`⏳ Rate limited. Please try again in ${err.message.replace('RATE_LIMITED:','')}`;
-                            this.messages.push({ role:'assistant', content:msg });
-                        }
-                        console.error('Chatbot error:',err);
-                    } finally {
-                        this.isLoading = false;
-                        this.scrollToBottom();
+                        
+                        if (response) break; // Success! Exit key loop
+                        
+                        if (lastError.includes('429') || lastError.includes('rate limit')) {
+                            window.API_HELPERS.rotateGroqKey();
+                        } else { break; }
                     }
-                },
 
-                scrollToBottom() {
-                    this.$nextTick(()=>{ const c=document.getElementById('chatbot-messages-container'); if(c) c.scrollTop=c.scrollHeight; });
+                    if (!response) {
+                        const wm = lastError.match(/try again in (\d+m[\d.]+s|\d+s)/i);
+                        throw new Error(wm ? `RATE_LIMITED:${wm[1]}` : `API_FAILED:${lastError}`);
+                    }
+
+                    const data  = await response.json();
+                    const reply = data.choices[0].message.content;
+                    this.messages.push({ role:'assistant', content:reply });
+                    replyAppended = true;
+                    await this.saveChatHistory(input, reply);
+
+                } catch(err) {
+                    if (!replyAppended) {
+                        let msg = 'Sorry, I encountered an error. Please try again.';
+                        if (err.message?.startsWith('RATE_LIMITED:')) msg = `⏳ Rate limited. Please try again in ${err.message.replace('RATE_LIMITED:','')}`;
+                        this.messages.push({ role:'assistant', content:msg });
+                    }
+                } finally {
+                    this.isLoading = false;
+                    this.scrollToBottom();
                 }
-            };
-        }
+            },
+
+            async fetchRelevantAnnouncements(userQuery) {
+                try {
+                    const sf = `id,title,description,summary,category,scheduled_date,target_audience,location,created_at,posted_by,posted_at,why,memberstest!posted_by_member_fkey("firstName","lastName")`;
+                    const{data:recent}=await supabaseClient.from('announcementstest').select(sf).eq('archived',false).order('posted_at',{ascending:false,nullsFirst:false}).limit(20);
+                    if(!recent || !recent.length) return 'No announcements found.';
+                    const trunc=(t,m)=>t&&t.length>m?t.substring(0,m)+'...':(t||'N/A');
+                    return recent.map((a,i)=>{
+                        const pb=a.memberstest ? `${a.memberstest.firstName||''} ${a.memberstest.lastName||''}`.trim() : (a.posted_by||'Unknown');
+                        return `[${i+1}] ${a.title}\nCategory:${a.category||'General'}\nScheduled Date:${a.scheduled_date||'N/A'}\nAudience:${a.target_audience||'All'}\nDetails:${a.summary||trunc(a.description,150)}\nPosted by:${pb}\n---`;
+                    }).join('\n');
+                } catch { return 'Unable to fetch announcements.'; }
+            },
+
+            async fetchSystemInfo(userQuery) {
+                try {
+                    const{data,error}=await supabaseClient.from('system_info').select('category,topic,content');
+                    if(error||!data?.length)return'No system information available.';
+                    return data.slice(0,5).map(i=>`[${i.category}] ${i.topic}: ${i.content}`).join('\n---\n');
+                } catch { return 'Unable to fetch system information.'; }
+            },
+
+            async saveChatHistory(userMsg, reply) {
+                try { await supabaseClient.from('chat_history').insert([{session_id:this.sessionId,user_message:userMsg,assistant_response:reply,has_security_concern:false,created_at:new Date().toISOString()}]); } catch {}
+            },
+
+            scrollToBottom() { this.$nextTick(()=>{const c=document.getElementById('chatbot-messages-container');if(c)c.scrollTop=c.scrollHeight;}); }
+        };
+    }
 
         // ════════════════════════════════════════
         // GOOGLE TRANSLATE
