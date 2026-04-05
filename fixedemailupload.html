@@ -9,7 +9,7 @@
     <script src="https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <script src="UI.js"></script>
+    <script src="keys.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -980,16 +980,16 @@ Emergency > Deadline > Memo > Notices
         }
     }
 
-    // ══════════════════════════════════════
-    // CHATBOT — Alpine.js (x-data="initChatbot()")
-    // ══════════════════════════════════════
+    // ════════════════════════════════════════
+    // CHATBOT — Alpine.js x-data (Upload Page)
+    // ════════════════════════════════════════
     function initChatbot() {
         return {
             isOpen: false,
             userInput: '',
             isLoading: false,
             sessionId: 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2,9),
-            messages: [{ role:'assistant', content:"Hi! I'm your campus assistant. I can help with announcements, deadlines, and campus info. What would you like to know?" }],
+            messages: [{ role:'assistant', content:"Hi! I'm your campus assistant. I can help with formatting announcements, OCR text extraction, and platform rules. What do you need help with?" }],
 
             async sendMessage() {
                 if (!this.userInput.trim()) return;
@@ -1001,7 +1001,7 @@ Emergency > Deadline > Memo > Notices
 
                 let replyAppended = false;
                 try {
-                    // Read live form field values as context (unique to upload page)
+                    // Read live form field values as context
                     const formContext = [
                         `Title: ${document.getElementById('fieldTitle')?.value || 'empty'}`,
                         `Category: ${document.getElementById('fieldCategory')?.value || 'empty'}`,
@@ -1011,27 +1011,36 @@ Emergency > Deadline > Memo > Notices
                     const sysMsg = {
                         role: 'system',
                         content: `You are the CentraNounceIT Hub Assistant helping faculty staff upload and manage announcements.
-You can help with: how to use the OCR feature, how to fill out announcement fields, category descriptions, and general campus communication questions.
-Current form data:\n${formContext}
-Be concise, helpful, and professional. If asked about technical issues, suggest refreshing the page or contacting support.`
+You can help with: how to use the OCR feature, how to fill out announcement fields, and general campus communication questions.
+Current form data they are typing:\n${formContext}\nBe concise, helpful, and professional.`
                     };
 
-                    const apiKey  = window.API_KEYS?.GROQ_API_KEY || '';
                     const msgs    = [sysMsg, ...this.messages.map(m=>({ role:m.role, content:m.content }))];
-                    const models  = ['llama-3.3-70b-versatile','llama-3.1-8b-instant','mixtral-8x7b-32768','llama3-8b-8192'];
+                    const models  = ['llama-3.3-70b-versatile','llama-3.1-8b-instant','mixtral-8x7b-32768'];
                     let response  = null, lastError = '';
 
-                    for (const model of models) {
-                        try {
-                            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                                method: 'POST',
-                                headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${apiKey}` },
-                                body: JSON.stringify({ model, messages:msgs, temperature:0.7, max_tokens:1024 })
-                            });
-                            if (res.ok) { response=res; break; }
-                            lastError = await res.text();
-                            if (res.status !== 429 && res.status !== 413) break;
-                        } catch(fe) { lastError = fe.message; }
+                    // 7-Key Rotation Loop
+                    for (let keyAttempt = 0; keyAttempt < 7; keyAttempt++) {
+                        const apiKey = window.API_HELPERS.getGroqKey();
+                        
+                        for (const model of models) {
+                            try {
+                                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${apiKey}` },
+                                    body: JSON.stringify({ model, messages:msgs, temperature:0.7, max_tokens:1024 })
+                                });
+                                if (res.ok) { response=res; break; }
+                                lastError = await res.text();
+                                if (res.status !== 429 && res.status !== 413) break;
+                            } catch(fe) { lastError = fe.message; }
+                        }
+                        
+                        if (response) break; // Success!
+                        
+                        if (lastError.includes('429') || lastError.includes('rate limit')) {
+                            window.API_HELPERS.rotateGroqKey();
+                        } else { break; }
                     }
 
                     if (!response) {
@@ -1040,39 +1049,24 @@ Be concise, helpful, and professional. If asked about technical issues, suggest 
                     }
 
                     const data  = await response.json();
-                    if (!data.choices?.length) throw new Error('No choices returned from API');
                     const reply = data.choices[0].message.content;
-
                     this.messages.push({ role:'assistant', content:reply });
                     replyAppended = true;
 
-                    // Save to Supabase (fire-and-forget)
-                    supabaseClient.from('chat_history').insert([{
-                        session_id: this.sessionId, user_message: input,
-                        assistant_response: reply, has_security_concern: false,
-                        created_at: new Date().toISOString()
-                    }]).then(({ error }) => { if (error) console.warn('Chat history save error:', error.message); });
+                    supabaseClient.from('chat_history').insert([{session_id: this.sessionId, user_message: input, assistant_response: reply, has_security_concern: false, created_at: new Date().toISOString()}]).then(()=>{});
 
                 } catch(err) {
                     if (!replyAppended) {
                         let msg = 'Sorry, I encountered an error. Please try again.';
-                        if (err.message?.startsWith('RATE_LIMITED:'))
-                            msg = `⏳ Rate limited. Please try again in ${err.message.replace('RATE_LIMITED:','')}`;
+                        if (err.message?.startsWith('RATE_LIMITED:')) msg = `⏳ Rate limited. Please try again in ${err.message.replace('RATE_LIMITED:','')}`;
                         this.messages.push({ role:'assistant', content:msg });
                     }
-                    console.error('Chatbot error:', err);
                 } finally {
                     this.isLoading = false;
                     this.scrollToBottom();
                 }
             },
-
-            scrollToBottom() {
-                this.$nextTick(() => {
-                    const c = document.getElementById('chatbot-messages-container');
-                    if (c) c.scrollTop = c.scrollHeight;
-                });
-            }
+            scrollToBottom() { this.$nextTick(() => { const c = document.getElementById('chatbot-messages-container'); if (c) c.scrollTop = c.scrollHeight; }); }
         };
     }
 
