@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # IMPORTANT: Notice that EOF does NOT have quotes around it. 
 # This is what allows your environment variables to be injected properly.
 cat << EOF > UI.js
@@ -23,18 +22,13 @@ const _encoded = [
     '$EMAILJS_PUBLIC_KEY_UPLOAD_1', '$EMAILJS_SERVICE_ID_UPLOAD_1', '$EMAILJS_TEMPLATE_ID_UPLOAD_1',
     '$EMAILJS_PUBLIC_KEY_UPLOAD_2', '$EMAILJS_SERVICE_ID_UPLOAD_2', '$EMAILJS_TEMPLATE_ID_UPLOAD_2'
 ];
-
-// Helper to decode Base64 and instantly strip invisible newlines/spaces
 const dec = (val) => {
     try { return val ? atob(val).trim() : ''; } 
     catch (e) { return ''; }
 };
-
 window.API_KEYS = {
     SUPABASE_URL: dec(_encoded[7]),
     SUPABASE_ANON_KEY: dec(_encoded[8]),
-    
-    // 7 Groq Keys
     GROQ: { 
         pool: [
             dec(_encoded[0]), dec(_encoded[1]), dec(_encoded[2]), 
@@ -45,7 +39,7 @@ window.API_KEYS = {
     },
     EMAIL_LOGIN: {
         pool: [
-            { PK: dec(_encoded[9]), SID: dec(_encoded[10]), TID: dec(_encoded[11]) },
+            { PK: dec(_encoded[9]),  SID: dec(_encoded[10]), TID: dec(_encoded[11]) },
             { PK: dec(_encoded[12]), SID: dec(_encoded[13]), TID: dec(_encoded[14]) }
         ], index: 0
     },
@@ -62,7 +56,6 @@ window.API_KEYS = {
         ], index: 0
     }
 };
-
 window.API_HELPERS = {
     getGroqKey: () => window.API_KEYS.GROQ.pool[window.API_KEYS.GROQ.index],
     rotateGroqKey: () => {
@@ -78,5 +71,4 @@ window.API_HELPERS = {
     }
 };
 EOF
-
 echo "✅ UI.js successfully generated with atob AND trim!"
