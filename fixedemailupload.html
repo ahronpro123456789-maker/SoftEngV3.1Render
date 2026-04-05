@@ -9,7 +9,7 @@
     <script src="https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <script src="keys.js"></script>
+    <script src="UI.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -254,7 +254,6 @@
 <body class="p-4 sm:p-6">
 <div class="max-w-7xl mx-auto">
 
-    <!-- ── HEADER ── -->
     <div class="flex justify-between items-center mb-8 flex-wrap gap-4">
         <a href="faculty_Dashboard.html"
            class="inline-flex items-center gap-2 text-lg font-semibold transition-opacity opacity-90 hover:opacity-100"
@@ -267,13 +266,10 @@
         </button>
     </div>
 
-    <!-- ── MAIN GRID ── -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        <!-- LEFT COLUMN -->
         <div class="space-y-6">
 
-            <!-- Image upload panel -->
             <div class="panel">
                 <label class="field-label text-lg mb-3" for="imageInput">Upload or Capture Image</label>
                 <input type="file" id="imageInput" accept="image/*"
@@ -291,7 +287,6 @@
                     </button>
                 </div>
 
-                <!-- Progress -->
                 <div id="progressContainer" class="mt-4 hidden">
                     <div class="progress-track mb-2">
                         <div class="progress-fill" id="progressBar"></div>
@@ -300,25 +295,21 @@
                 </div>
             </div>
 
-            <!-- Extracted text preview -->
             <div class="panel" style="min-height:640px;">
                 <div class="font-bold mb-3 text-xl" style="color:var(--accent);">Extracted Text Preview</div>
                 <pre id="extractedTextPreview" class="text-preview">No text extracted yet</pre>
             </div>
         </div>
 
-        <!-- RIGHT COLUMN: form -->
         <div>
             <form id="announcementForm" class="panel space-y-5" style="min-height:800px;">
                 <div class="text-2xl font-bold mb-2" style="color:var(--accent);">Announcement Details</div>
 
-                <!-- Title -->
                 <div>
                     <label class="field-label" for="fieldTitle">Title *</label>
                     <input id="fieldTitle" class="form-input" placeholder="Main title of the announcement" autocomplete="off" required>
                 </div>
 
-                <!-- Category + Audience -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="field-label" for="category">Category *</label>
@@ -341,21 +332,18 @@
                     </div>
                 </div>
 
-                <!-- Full Description -->
                 <div>
                     <label class="field-label" for="fieldWhat">What (Full Description)</label>
                     <textarea id="fieldWhat" class="form-input" style="height:180px;"
                         placeholder="Complete announcement content"></textarea>
                 </div>
 
-                <!-- Summary -->
                 <div>
                     <label class="field-label" for="fieldSummary">Summary (Brief Overview)</label>
                     <textarea id="fieldSummary" class="form-input" style="height:120px;"
                         placeholder="Auto-generated concise summary"></textarea>
                 </div>
 
-                <!-- When + Where -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="field-label" for="fieldWhen">When (Scheduled Date)</label>
@@ -367,23 +355,19 @@
                     </div>
                 </div>
 
-                <!-- Why -->
                 <div>
                     <label class="field-label" for="fieldWhy">Why (Purpose)</label>
                     <textarea id="fieldWhy" class="form-input" style="height:140px;"
                         placeholder="Purpose or reason for the event"></textarea>
                 </div>
 
-                <!-- Date Posted (readonly) -->
                 <div>
                     <label class="field-label" for="fieldDatePosted">Date Posted</label>
                     <input id="fieldDatePosted" class="form-input" readonly>
                 </div>
 
-                <!-- Status message -->
                 <div id="statusMsg" class="text-sm font-semibold text-center p-4 rounded hidden"></div>
 
-                <!-- Submit -->
                 <button type="submit" id="saveButton" class="btn-green w-full text-base">
                     <i class="fas fa-save mr-2"></i>Save Announcement
                 </button>
@@ -392,9 +376,6 @@
     </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     CAMERA MODAL
-══════════════════════════════════════ -->
 <div id="cameraModal" class="overlay-modal">
     <div class="overlay-inner w-full" style="max-width:680px;">
         <h2 class="text-2xl font-bold mb-4" style="color:var(--accent);">Capture Announcement Photo</h2>
@@ -411,9 +392,6 @@
     </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     CROP MODAL
-══════════════════════════════════════ -->
 <div id="cropModal" class="overlay-modal">
     <div class="overlay-inner w-full" style="max-width:800px;">
         <h2 class="text-2xl font-bold mb-4" style="color:var(--accent);">Crop Your Image</h2>
@@ -427,9 +405,6 @@
     </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     CHATBOT (Alpine.js) — bottom-[160px] right-[30px]
-══════════════════════════════════════ -->
 <div x-data="initChatbot()" x-cloak>
     <button @click="isOpen = !isOpen"
         class="fixed bottom-[160px] right-[30px] w-[50px] h-[50px] rounded-full flex items-center justify-center text-black cursor-pointer z-[999] border-2 text-xl transition-all duration-300 hover:scale-110 active:scale-95"
@@ -449,7 +424,6 @@
          class="fixed bottom-[220px] right-[30px] w-[90vw] max-w-[400px] max-h-[calc(100vh-240px)] min-h-[300px] rounded-3xl border flex flex-col overflow-hidden z-[998] transition-colors duration-300"
          style="background:var(--bg); border-color:var(--border); box-shadow:0 20px 60px rgba(0,0,0,0.5);">
 
-        <!-- Header -->
         <div class="px-4 py-3 border-b flex items-center justify-between gap-3"
              style="background:var(--surface); border-color:var(--border);">
             <div>
@@ -461,7 +435,6 @@
             </button>
         </div>
 
-        <!-- Messages -->
         <div id="chatbot-messages-container" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3" style="background:var(--bg);">
             <template x-for="(msg, index) in messages" :key="index">
                 <div :style="msg.role === 'user'
@@ -478,7 +451,6 @@
             </div>
         </div>
 
-        <!-- Footer -->
         <div class="p-4 border-t" style="background:var(--surface); border-color:var(--border);">
             <form @submit.prevent="sendMessage()" class="flex gap-2 items-center">
                 <input type="text" x-model="userInput" placeholder="Ask a question..."
@@ -496,9 +468,6 @@
     </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     TRANSLATE BUTTON
-══════════════════════════════════════ -->
 <button id="translate-toggle-btn"
     class="notranslate fixed bottom-[30px] right-[30px] z-[999] w-[50px] h-[50px] rounded-full flex items-center justify-center cursor-pointer text-xl text-black"
     style="background:var(--accent); border:2px solid var(--accent); box-shadow:0 4px 12px rgba(159,232,112,0.4); transition:all .3s;"
@@ -507,19 +476,20 @@
 </button>
 <div id="google_translate_element" class="notranslate translate-dropdown" translate="no" style="display:none;"></div>
 
-<!-- ══════════════════════════════════════
-     SCRIPTS
-══════════════════════════════════════ -->
 <script>
-    // ── EmailJS init from keys.js ──
-    (function() { emailjs.init(window.API_KEYS?.EMAILJS_PUBLIC_KEY_UPLOAD || ''); })();
+    // ── EmailJS init from UI.js ──
+    (function() { 
+        if (window.API_HELPERS) {
+            emailjs.init(window.API_HELPERS.getEmailConfig('UPLOAD').PK); 
+        }
+    })();
 
-    // ── Config — all keys from keys.js ──
+    // ── Config — all keys from UI.js ──
     const CONFIG = {
         SUPABASE_URL:        window.API_KEYS?.SUPABASE_URL || '',
         SUPABASE_KEY:        window.API_KEYS?.SUPABASE_ANON_KEY || '',
         GROQ_MODEL:          'llama-3.1-8b-instant',
-        MAX_RETRIES:         3,
+        MAX_RETRIES:         7, // Updated to 7 to utilize all keys
         RETRY_DELAY:         2000,
         REQUEST_TIMEOUT:     30000,
         MIN_OCR_TEXT_LENGTH: 10
@@ -855,9 +825,11 @@ Emergency > Deadline > Memo > Notices
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), CONFIG.REQUEST_TIMEOUT);
         try {
+            // Apply Groq key rotation here
+            const apiKey = window.API_HELPERS.getGroqKey();
             const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                 method: "POST",
-                headers: { "Authorization": `Bearer ${window.API_KEYS?.GROQ_API_KEY || ''}`, "Content-Type": "application/json" },
+                headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
                 body: JSON.stringify({
                     model: CONFIG.GROQ_MODEL,
                     messages: [
@@ -870,7 +842,14 @@ Emergency > Deadline > Memo > Notices
                 signal: controller.signal
             });
             clearTimeout(timeoutId);
-            if (!response.ok) throw new GroqAPIError(`API request failed: ${response.statusText}`, response.status);
+            
+            if (!response.ok) {
+                if (response.status === 429 || response.status === 400) {
+                    window.API_HELPERS.rotateGroqKey();
+                }
+                throw new GroqAPIError(`API request failed: ${response.statusText}`, response.status);
+            }
+            
             const data = await response.json();
             if (data.error) throw new GroqAPIError(`API error: ${data.error.message}`);
             if (!data.choices?.length) throw new GroqAPIError('No response from API');
@@ -946,17 +925,35 @@ Emergency > Deadline > Memo > Notices
             if (fetchError) {
                 showStatus("⚠ Announcement saved, but couldn't fetch users to email.", 'warning');
             } else if (usersData?.length > 0) {
-                await Promise.all(usersData.map(user =>
-                    emailjs.send(window.API_KEYS?.EMAILJS_SERVICE_ID_UPLOAD || '', window.API_KEYS?.EMAILJS_TEMPLATE_ID_UPLOAD || '', {
-                        to_name:              user.fullname,
-                        to_email:             user.email,
-                        announcement_title:   announcementData.title,
-                        announcement_category:announcementData.category,
-                        announcement_content: announcementData.description || 'See announcement dashboard for details.',
-                        scheduled_date:       announcementData.scheduled_date || 'TBA'
-                    }).catch(err => console.error(`Failed to send to ${user.email}`, err))
-                ));
-                showStatus('✅ Announcement saved and emails sent!', 'success');
+                let emailSentSuccess = false;
+                let isRetry = false;
+                
+                while (!emailSentSuccess && !isRetry) {
+                    const config = window.API_HELPERS.getEmailConfig('UPLOAD');
+                    try {
+                        await Promise.all(usersData.map(user =>
+                            emailjs.send(config.SID, config.TID, {
+                                to_name:              user.fullname,
+                                to_email:             user.email,
+                                announcement_title:   announcementData.title,
+                                announcement_category:announcementData.category,
+                                announcement_content: announcementData.description || 'See announcement dashboard for details.',
+                                scheduled_date:       announcementData.scheduled_date || 'TBA'
+                            })
+                        ));
+                        emailSentSuccess = true;
+                        showStatus('✅ Announcement saved and emails sent!', 'success');
+                    } catch (err) {
+                        if (!isRetry) {
+                            window.API_HELPERS.rotateEmailConfig('UPLOAD');
+                            isRetry = true;
+                        } else {
+                            console.error(`Failed to send mass emails:`, err);
+                            showStatus("⚠ Announcement saved, but emails failed to send.", 'warning');
+                            break;
+                        }
+                    }
+                }
             } else {
                 showStatus('✅ Announcement saved! (No active users to email)', 'success');
             }
@@ -980,9 +977,9 @@ Emergency > Deadline > Memo > Notices
         }
     }
 
-    // ════════════════════════════════════════
-    // CHATBOT — Alpine.js x-data (Upload Page)
-    // ════════════════════════════════════════
+    // ══════════════════════════════════════
+    // CHATBOT — Alpine.js x-data
+    // ══════════════════════════════════════
     function initChatbot() {
         return {
             isOpen: false,
