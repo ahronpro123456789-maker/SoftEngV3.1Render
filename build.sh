@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# IMPORTANT: Notice that EOF does NOT have quotes around it. 
-# This is what allows your environment variables to be injected properly.
+# Generates UI.js with environment variables injected
 cat << EOF > UI.js
 const _encoded = [
     // Groq Keys (Indices 0 to 6)
@@ -28,7 +27,6 @@ window.API_KEYS = {
     SUPABASE_URL: atob(_encoded[7]),
     SUPABASE_ANON_KEY: atob(_encoded[8]),
     
-    // 7 Groq Keys
     GROQ: { 
         pool: [
             atob(_encoded[0]), atob(_encoded[1]), atob(_encoded[2]), 
@@ -72,3 +70,5 @@ window.API_HELPERS = {
     }
 };
 EOF
+
+echo "✅ UI.js successfully generated!"
