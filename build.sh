@@ -24,36 +24,41 @@ const _encoded = [
     '$EMAILJS_PUBLIC_KEY_UPLOAD_2', '$EMAILJS_SERVICE_ID_UPLOAD_2', '$EMAILJS_TEMPLATE_ID_UPLOAD_2'
 ];
 
+// Helper to decode Base64 and instantly strip invisible newlines/spaces
+const dec = (val) => {
+    try { return val ? atob(val).trim() : ''; } 
+    catch (e) { return ''; }
+};
+
 window.API_KEYS = {
-    // Decoding Base64 back to normal strings for the APIs
-    SUPABASE_URL: atob(_encoded[7]),
-    SUPABASE_ANON_KEY: atob(_encoded[8]),
+    SUPABASE_URL: dec(_encoded[7]),
+    SUPABASE_ANON_KEY: dec(_encoded[8]),
     
     // 7 Groq Keys
     GROQ: { 
         pool: [
-            atob(_encoded[0]), atob(_encoded[1]), atob(_encoded[2]), 
-            atob(_encoded[3]), atob(_encoded[4]), atob(_encoded[5]), 
-            atob(_encoded[6])
+            dec(_encoded[0]), dec(_encoded[1]), dec(_encoded[2]), 
+            dec(_encoded[3]), dec(_encoded[4]), dec(_encoded[5]), 
+            dec(_encoded[6])
         ], 
         index: 0 
     },
     EMAIL_LOGIN: {
         pool: [
-            { PK: atob(_encoded[9]), SID: atob(_encoded[10]), TID: atob(_encoded[11]) },
-            { PK: atob(_encoded[12]), SID: atob(_encoded[13]), TID: atob(_encoded[14]) }
+            { PK: dec(_encoded[9]), SID: dec(_encoded[10]), TID: dec(_encoded[11]) },
+            { PK: dec(_encoded[12]), SID: dec(_encoded[13]), TID: dec(_encoded[14]) }
         ], index: 0
     },
     EMAIL_SIGNUP: {
         pool: [
-            { PK: atob(_encoded[15]), SID: atob(_encoded[16]), TID: atob(_encoded[17]) },
-            { PK: atob(_encoded[18]), SID: atob(_encoded[19]), TID: atob(_encoded[20]) }
+            { PK: dec(_encoded[15]), SID: dec(_encoded[16]), TID: dec(_encoded[17]) },
+            { PK: dec(_encoded[18]), SID: dec(_encoded[19]), TID: dec(_encoded[20]) }
         ], index: 0
     },
     EMAIL_UPLOAD: {
         pool: [
-            { PK: atob(_encoded[21]), SID: atob(_encoded[22]), TID: atob(_encoded[23]) },
-            { PK: atob(_encoded[24]), SID: atob(_encoded[25]), TID: atob(_encoded[26]) }
+            { PK: dec(_encoded[21]), SID: dec(_encoded[22]), TID: dec(_encoded[23]) },
+            { PK: dec(_encoded[24]), SID: dec(_encoded[25]), TID: dec(_encoded[26]) }
         ], index: 0
     }
 };
@@ -74,4 +79,4 @@ window.API_HELPERS = {
 };
 EOF
 
-echo "✅ UI.js successfully generated WITH atob decoding!"
+echo "✅ UI.js successfully generated with atob AND trim!"
