@@ -6,7 +6,7 @@
     <title>CENTRANOUNCEIT DEPTHUB - Login</title>
     <link rel="icon" type="image/x-icon" href="CCSICTLOGOCROP.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="UI.js"></script>
+    <script src="keys.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -180,12 +180,46 @@
 
     <script>
     // ════════════════════════════════════════
-    // INIT — all keys from keys.js
+    // INIT — Supabase & EmailJS
     // ════════════════════════════════════════
     const supabaseClient = supabase.createClient(
         window.API_KEYS?.SUPABASE_URL      || '',
         window.API_KEYS?.SUPABASE_ANON_KEY || ''
     );
+
+    if (window.API_HELPERS) {
+        emailjs.init(window.API_HELPERS.getEmailConfig('LOGIN').PK);
+    }
+
+    // ════════════════════════════════════════
+    // CONFIG & ELEMENTS (Keep your existing element variables here)
+    // ════════════════════════════════════════
+    // ... [keep your existing code here up to the sendOtpEmail function] ...
+
+    async function sendOtpEmail(userEmail, userName, otp, isRetry = false) {
+        const config = window.API_HELPERS.getEmailConfig('LOGIN');
+        try {
+            await emailjs.send(config.SID, config.TID, {
+                to_email: userEmail,
+                to_name:  userName || 'User',
+                otp_code: otp,
+            });
+            console.log('✅ OTP email sent.');
+            return true;
+        } catch (err) {
+            console.error('EmailJS error:', err);
+            
+            // If it failed and we haven't retried yet, rotate and retry
+            if (!isRetry && (err.status === 429 || err.status === 400)) {
+                window.API_HELPERS.rotateEmailConfig('LOGIN');
+                return await sendOtpEmail(userEmail, userName, otp, true);
+            }
+
+            messageArea.textContent = `✗ Failed to send OTP. Error: ${err.text || err.message}`;
+            messageArea.className = 'mt-4 text-center text-sm font-semibold text-red-500 min-h-[24px]';
+            return false;
+        }
+    }
 
     // EmailJS — init from keys.js
     emailjs.init(window.API_KEYS?.EMAILJS_PUBLIC_KEY_LOGIN || '');
