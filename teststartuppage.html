@@ -91,7 +91,11 @@
             background-color: var(--bg);
             color: var(--text);
             transition: background-color 0.3s ease, color 0.3s ease;
+            overflow-x: hidden; 
+            width: 100%;
         }
+
+        img, video, canvas { max-width: 100%; height: auto; }
 
         /* ── Header ── */
         header {
@@ -166,6 +170,7 @@
             text-decoration: none;
             transition: all 0.3s;
             display: inline-block;
+            position: relative;
         }
         .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
 
@@ -179,6 +184,7 @@
             border-radius: 20px;
             box-shadow: var(--shadow-md);
             transition: all 0.3s;
+            height: 100%;
         }
         .feature-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-card); }
 
@@ -191,6 +197,7 @@
             padding: 2rem;
             border-radius: 16px;
             border-left: 4px solid var(--accent);
+            height: 100%;
         }
         .about-card h3 { color: var(--accent-dark); font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; }
         .about-card p { color: var(--text2); line-height: 1.7; }
@@ -198,7 +205,6 @@
         /* ── Mission/Vision box ── */
         .mv-box {
             background: linear-gradient(135deg, rgba(159,232,112,0.1) 0%, rgba(138,217,94,0.1) 100%);
-            padding: 3rem;
             border-radius: 20px;
             margin-top: 3rem;
         }
@@ -211,6 +217,7 @@
             box-shadow: var(--shadow-md);
             text-align: center;
             transition: all 0.3s;
+            height: 100%;
         }
         .dev-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-card); }
 
@@ -257,7 +264,6 @@
         footer {
             background-color: var(--bg-footer);
             color: var(--text-footer);
-            padding: 3rem 2rem;
             transition: background-color 0.3s;
         }
         .footer-link { color: var(--text-footer2); text-decoration: none; line-height: 1.8; display: block; transition: color 0.3s; }
@@ -265,39 +271,106 @@
         .footer-p { color: var(--text-footer2); line-height: 1.8; }
 
         /* ── Page content sections ── */
-        .page-content { display: none; max-width: 900px; margin: 0 auto; padding: 5rem 2rem; }
+        .page-content { display: none; max-width: 900px; margin: 0 auto; }
         .page-content.active { display: block; }
-        .page-content h2 { font-size: 2.5rem; font-weight: 800; color: var(--text); margin-bottom: 1rem; }
+        .page-content h2 { font-weight: 800; color: var(--text); margin-bottom: 1rem; }
         .page-content h3 { font-size: 1.75rem; font-weight: 700; color: var(--accent-dark); margin-top: 2.5rem; margin-bottom: 1rem; }
         .page-content h4 { font-size: 1.25rem; font-weight: 600; color: var(--text); margin-top: 1.5rem; margin-bottom: 0.75rem; }
         .page-content p { color: var(--text2); line-height: 1.8; margin-bottom: 1.5rem; }
         .page-content ul, .page-content ol { color: var(--text2); line-height: 1.8; margin-bottom: 1.5rem; padding-left: 2rem; }
         .page-content li { margin-bottom: 0.5rem; }
 
-        /* ── Mobile menu ── */
+        /* ── Hero image shadow ── */
+        .hero-img { border-radius: 24px; box-shadow: var(--shadow-lg); width: 100%; }
+
+        /* ── Logo badge ── */
+        .logo-badge {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+            color: #000;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(159,232,112,0.3);
+            font-weight: 700;
+        }
+
+        /* ── Feature icon circle ── */
+        .feature-icon {
+            width: 70px; height: 70px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+            border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg2); }
+        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+
+        /* ==========================================================================
+           FLUID RESPONSIVENESS (Adapts to ANY screen size via math functions)
+           ========================================================================== */
+
+        h1 { font-size: clamp(2rem, 5vw + 1rem, 3.5rem) !important; }
+        h2, .page-content h2, .section-title { font-size: clamp(1.8rem, 4vw + 1rem, 2.5rem) !important; }
+        .section-subtitle { font-size: clamp(1rem, 2vw + 0.5rem, 1.125rem) !important; width: 100%; }
+
+        section, .page-content { padding: clamp(3rem, 8vw, 5rem) clamp(1rem, 5vw, 2rem) !important; }
+        .nav-container { padding: 1rem clamp(1rem, 5vw, 2rem) !important; }
+        footer { padding: clamp(3rem, 6vw, 4rem) clamp(1.5rem, 5vw, 2rem) !important; }
+        .mv-box { padding: clamp(1.5rem, 5vw, 3rem) !important; }
+        
+        .features-section > div > div {
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)) !important;
+        }
+        .about-section > div > div:not(.mv-box > div) {
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)) !important;
+        }
+        .mv-box > div {
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)) !important;
+        }
+        footer > div {
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)) !important;
+        }
+
+        /* Layout Adjustments for Tablets and below */
         @media (max-width: 968px) {
             .nav-links {
-                display: none;
+                display: none !important; /* Forces menu to hide, overriding Tailwind */
                 flex-direction: column;
                 position: absolute;
                 top: 100%; left: 0; right: 0;
                 background-color: var(--bg-header);
                 padding: 2rem;
-                box-shadow: var(--shadow-md);
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                border-bottom: 1px solid var(--border);
                 gap: 1.5rem;
                 align-items: flex-start;
                 z-index: 99;
             }
-            .nav-links.open { display: flex; }
+            .nav-links.open { display: flex !important; } /* Forces menu to show when toggled */
             .nav-links a { width: 100%; padding: 0.5rem 0; }
             .nav-links .login-btn { width: 100%; text-align: center; }
             .mobile-btn { display: block !important; }
+
+            .hero-grid { grid-template-columns: 1fr !important; text-align: center; gap: 2rem !important; }
+            .hero-btns { justify-content: center; }
         }
-        @media (max-width: 640px) {
-            .hero-grid { grid-template-columns: 1fr !important; }
-            .hero-btns { flex-direction: column; }
-            .hero-btns a { width: 100%; text-align: center; }
-            .mv-box { padding: 2rem; }
+
+        /* Layout Adjustments for Mobile Phones */
+        @media (max-width: 480px) {
+            .hero-btns { flex-direction: column; width: 100%; }
+            .hero-btns a { width: 100%; text-align: center; margin-bottom: 0.5rem; }
+            
+            .feature-icon { margin: 0 auto 1.5rem !important; }
+            .feature-card { text-align: center; padding: 1.5rem !important; }
+            .about-card, .dev-card, .doc-card, .contact-form { padding: 1.5rem !important; }
+            
+            /* Translate button positioning fix */
+            .translate-dropdown { bottom: 80px !important; right: 10px !important; left: 10px !important; width: calc(100% - 20px) !important; }
+            #translate-toggle-btn { bottom: 20px !important; right: 20px !important; width: 45px !important; height: 45px !important; z-index: 999; }
+            
+            /* Add extra padding to the bottom so translate button doesn't cover "Student" button permanently */
+            #main-content { padding-bottom: 4rem; }
         }
 
         /* ── Google Translate banner suppression ── */
@@ -306,7 +379,6 @@
         .skiptranslate > iframe,
         #goog-gt-tt,
         .goog-te-balloon-frame { display: none !important; visibility: hidden !important; height: 0 !important; }
-        body { top: 0 !important; position: static !important; }
         body.translated-ltr, body.translated-rtl { top: 0 !important; margin-top: 0 !important; }
         .goog-te-gadget { font-family: 'Poppins', sans-serif !important; font-size: 0.85rem !important; line-height: 1 !important; }
         .goog-te-gadget-simple { background-color: transparent !important; border: none !important; padding: 4px !important; }
@@ -350,57 +422,19 @@
             from { opacity:0; transform:translateY(10px); }
             to   { opacity:1; transform:translateY(0); }
         }
-
-        /* ── Section/page titles ── */
-        .section-title { text-align: center; font-size: 2.5rem; font-weight: 800; color: var(--text); margin-bottom: 1rem; }
-        .section-subtitle { text-align: center; font-size: 1.125rem; color: var(--text2); margin-bottom: 3rem; max-width: 800px; margin-left: auto; margin-right: auto; }
-
-        /* ── Hero image shadow ── */
-        .hero-img { border-radius: 24px; box-shadow: var(--shadow-lg); width: 100%; }
-
-        /* ── Logo badge ── */
-        .logo-badge {
-            background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
-            color: #000;
-            padding: 6px 12px;
-            border-radius: 10px;
-            margin-left: 4px;
-            box-shadow: 0 4px 12px rgba(159,232,112,0.3);
-            font-weight: 700;
-            font-size: 0.9rem;
-        }
-
-        /* ── Feature icon circle ── */
-        .feature-icon {
-            width: 70px; height: 70px;
-            background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
-            border-radius: 16px;
-            display: flex; align-items: center; justify-content: center;
-            margin-bottom: 1.5rem;
-        }
-
-        /* ── Scrollbar ── */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg2); }
-        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
     </style>
 </head>
 <body>
 
-    <!-- ══════════════════════════════════════
-         HEADER
-    ══════════════════════════════════════ -->
     <header>
-        <nav class="nav-container" style="max-width:1200px; margin:0 auto; padding:1rem 2rem; display:flex; justify-content:space-between; align-items:center;">
+        <nav class="nav-container" style="max-width:1200px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; flex-wrap: nowrap;">
 
-            <!-- Logo -->
-            <a href="#" class="flex items-center gap-3 text-2xl font-extrabold no-underline" style="color:var(--text);" onclick="showHome(); return false;">
-                <i class="fas fa-database" style="color:var(--accent); font-size:2rem;"></i>
-                <span>CENTRANOUNCEIT</span>
-                <span class="logo-badge">DEPTHUB</span>
+            <a href="#" class="flex items-center gap-2 font-extrabold no-underline" style="color:var(--text); white-space: nowrap;" onclick="showHome(); return false;">
+                <i class="fas fa-database" style="color:var(--accent); font-size: clamp(1.5rem, 4vw, 2rem);"></i>
+                <span style="font-size: clamp(0.9rem, 3.5vw, 1.5rem);">CENTRANOUNCEIT</span>
+                <span class="logo-badge" style="font-size: clamp(0.65rem, 2vw, 0.9rem); padding: 4px 8px;">DEPTHUB</span>
             </a>
 
-            <!-- Desktop nav links -->
             <div class="nav-links flex gap-8 items-center" style="gap:2rem;">
                 <a href="#features" class="nav-link" onclick="showHome(); return false;">Features</a>
                 <a href="#about"    class="nav-link" onclick="showHome(); return false;">About</a>
@@ -411,16 +445,12 @@
                 <a href="notify_Me.html" class="login-btn">NotifyMe!</a>
             </div>
 
-            <!-- Mobile hamburger -->
-            <button class="mobile-btn" id="mobileMenuBtn" style="display:none; background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text);">
+            <button class="mobile-btn" id="mobileMenuBtn" style="display:none; background:none; border:none; font-size: clamp(1.2rem, 4vw, 1.5rem); cursor:pointer; color:var(--text); margin-left: 0.5rem;">
                 <i class="fas fa-bars" id="mobileIcon"></i>
             </button>
         </nav>
     </header>
 
-    <!-- ══════════════════════════════════════
-         TRANSLATE BUTTON (fixed)
-    ══════════════════════════════════════ -->
     <button id="translate-toggle-btn"
         class="notranslate"
         style="position:fixed; bottom:30px; right:30px; z-index:999; width:50px; height:50px; border-radius:50%; background:var(--accent); border:2px solid var(--accent); color:#000; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:1.3rem; box-shadow:0 4px 12px rgba(159,232,112,0.4); transition:all 0.3s;"
@@ -431,15 +461,11 @@
     </button>
     <div id="google_translate_element" class="notranslate translate-dropdown" translate="no" style="display:none;"></div>
 
-    <!-- ══════════════════════════════════════
-         MAIN HOME CONTENT
-    ══════════════════════════════════════ -->
     <div id="main-content">
 
-        <!-- Hero -->
-        <section class="hero-grid" style="max-width:1200px; margin:0 auto; padding:4rem 2rem; display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:center;">
+        <section class="hero-grid" style="max-width:1200px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr; align-items:center;">
             <div>
-                <h1 style="font-size:3rem; font-weight:800; color:var(--text); margin-bottom:1.5rem; line-height:1.2;">
+                <h1 style="font-weight:800; color:var(--text); margin-bottom:1.5rem; line-height:1.2;">
                     A Department Centralized Announcement <span style="color:var(--accent);">System</span>
                 </h1>
                 <p style="font-size:1.125rem; color:var(--text2); margin-bottom:2rem; line-height:1.6;">
@@ -458,12 +484,11 @@
             </div>
         </section>
 
-        <!-- Features -->
-        <section class="features-section" id="features" style="padding:5rem 2rem;">
+        <section class="features-section" id="features">
             <div style="max-width:1200px; margin:0 auto;">
                 <h2 class="section-title">Powerful Features</h2>
                 <p class="section-subtitle">Everything you need to manage departmental announcements effectively.</p>
-                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:2rem;">
+                <div style="display:grid; gap:2rem;">
 
                     <div class="feature-card">
                         <div class="feature-icon"><i class="fas fa-shield-alt" style="font-size:2rem; color:#000;"></i></div>
@@ -505,18 +530,16 @@
             </div>
         </section>
 
-        <!-- About -->
-        <section class="about-section" id="about" style="padding:5rem 2rem;">
+        <section class="about-section" id="about">
             <div style="max-width:1000px; margin:0 auto;">
                 <h2 class="section-title">About Us</h2>
                 <p class="section-subtitle">
                     CENTRANOUNCEIT DEPTHUB is a centralized platform created to revolutionize how departments manage and deliver critical updates, news, and alerts. Our mission is to bridge departmental gaps and enable efficient, real-time communication across all organizational levels.
                 </p>
 
-                <!-- Mission & Vision -->
                 <div class="mv-box">
                     <h3 style="font-size:1.75rem; font-weight:700; color:var(--text); margin-bottom:1.5rem; text-align:center;">Our Mission &amp; Vision</h3>
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:2rem; margin-top:2rem;">
+                    <div style="display:grid; gap:2rem; margin-top:2rem;">
                         <div style="text-align:center;">
                             <i class="fas fa-bullseye" style="font-size:3rem; color:var(--accent); margin-bottom:1rem; display:block;"></i>
                             <h4 style="font-size:1.25rem; font-weight:700; color:var(--text); margin-bottom:0.75rem;">Our Mission</h4>
@@ -530,17 +553,15 @@
                     </div>
                 </div>
 
-                <!-- About cards -->
-                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:3rem; margin-top:3rem;">
+                <div style="display:grid; gap:2rem; margin-top:3rem;">
                     <div class="about-card"><h3>Who We Are</h3><p>We are a team of dedicated developers and communication specialists committed to solving the challenges of fragmented information flow. Our platform is built with modern technology and user-centered design principles.</p></div>
                     <div class="about-card"><h3>Why Choose Us</h3><p>We combine fast performance, robust security, advanced features like OCR form auto-filling, and instant notifications—all in one reliable, modern solution tailored for growing organizations and educational institutions.</p></div>
                     <div class="about-card"><h3>What We Offer</h3><p>A comprehensive platform that centralizes announcements, streamlines workflows, enhances security with OTP authentication, and provides powerful search and real-time updates to keep everyone connected and informed.</p></div>
                 </div>
 
-                <!-- Dev Team -->
                 <div style="margin-top:4rem;">
                     <h3 style="font-size:2rem; font-weight:700; color:var(--text); margin-bottom:2rem; text-align:center;">Meet Our Development Team</h3>
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:2.5rem; margin-top:2rem;">
+                    <div style="display:grid; gap:2.5rem; margin-top:2rem;">
 
                         <div class="dev-card">
                             <img src="https://dqtictujkhxultwoaqaw.supabase.co/storage/v1/object/public/Avatar/public/3-1760788623123"
@@ -574,12 +595,7 @@
             </div>
         </section>
 
-    </div><!-- /#main-content -->
-
-    <!-- ══════════════════════════════════════
-         DOCUMENTATION PAGE
-    ══════════════════════════════════════ -->
-    <div id="documentation-page" class="page-content">
+    </div><div id="documentation-page" class="page-content">
         <h2>Documentation</h2>
         <p>Welcome to the CENTRANOUNCEIT DEPTHUB documentation. This guide will help you understand and use all features of our platform effectively.</p>
         <div class="doc-card"><h3>Getting Started</h3><h4>1. Account Setup</h4><p>To begin using CENTRANOUNCEIT DEPTHUB, administrators need to:</p><ul><li>Navigate to the admin login page</li><li>Enter your registered email address</li><li>Receive and enter the OTP (One-Time Password) sent to your email</li><li>Complete the verification process</li></ul><h4>2. Dashboard Overview</h4><p>Once logged in, you'll have access to:</p><ul><li><strong>Announcement Manager:</strong> Create, edit, and delete announcements</li><li><strong>User Management:</strong> Manage member accounts and permissions</li><li><strong>Analytics:</strong> View announcement reach and engagement metrics</li><li><strong>Settings:</strong> Configure system preferences and notifications</li></ul></div>
@@ -591,9 +607,6 @@
         <p style="margin-top:3rem;"><strong>Need more help?</strong> Contact our support team at <a href="#" onclick="showContactPage(); return false;" style="color:var(--accent); text-decoration:underline;"><span class="__cf_email__" data-cfemail="6f0c0e021f1a1c0e0101001a010c0a020a011b5a5b5c5d5e2f08020e0603410c0002">[email&#160;protected]</span></a></p>
     </div>
 
-    <!-- ══════════════════════════════════════
-         HELP PAGE
-    ══════════════════════════════════════ -->
     <div id="help-page" class="page-content">
         <h2>Help Center</h2>
         <p>Find quick answers to common questions and learn how to make the most of CENTRANOUNCEIT DEPTHUB.</p>
@@ -603,9 +616,6 @@
         <div class="doc-card"><h3>Getting More Help</h3><p>If you can't find the answer to your question:</p><ul><li>Check our <a href="#" onclick="showDocPage(); return false;" style="color:var(--accent); text-decoration:underline;">Documentation</a> for detailed guides</li><li><a href="#" onclick="showContactPage(); return false;" style="color:var(--accent); text-decoration:underline;">Contact our support team</a> for personalized assistance</li><li>Email us at <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="45262428353036242b2b2a302b262028202b317071767774052228242c296b262a28">[email&#160;protected]</a></li><li>Call +63 (125) 933-5023 for urgent issues</li></ul></div>
     </div>
 
-    <!-- ══════════════════════════════════════
-         CONTACT PAGE
-    ══════════════════════════════════════ -->
     <div id="contact-page" class="page-content">
         <h2>Contact Us</h2>
         <p>Have questions or need support? We're here to help! Reach out to us using the form below or through our contact information.</p>
@@ -622,9 +632,6 @@
         <div class="doc-card" style="margin-top:3rem;"><h3>Other Ways To Reach Us</h3><p><strong>Technical Support:</strong> For urgent technical issues, please call our support line directly.</p><p><strong>General Inquiries:</strong> For general questions about our platform, email us and we'll respond promptly.</p><p><strong>Feature Requests:</strong> We love hearing your ideas! Let us know what features you'd like to see.</p><p><strong>Bug Reports:</strong> Found a bug? Please report it with as much detail as possible so we can fix it quickly.</p></div>
     </div>
 
-    <!-- ══════════════════════════════════════
-         PRIVACY PAGE
-    ══════════════════════════════════════ -->
     <div id="privacy-page" class="page-content">
         <h2>Privacy Policy</h2>
         <p><strong>Last Updated:</strong> November 9, 2025</p>
@@ -635,9 +642,6 @@
         <div class="doc-card"><h3>4. Contact Us</h3><p><strong>Email:</strong> <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="4b282a263b3e382a2525243e25282e262e253f7e7f78797a0b2c262a222765282426">[email&#160;protected]</a></p><p><strong>Phone:</strong> +63 (125) 933-5023</p></div>
     </div>
 
-    <!-- ══════════════════════════════════════
-         TERMS PAGE
-    ══════════════════════════════════════ -->
     <div id="terms-page" class="page-content">
         <h2>Terms of Service</h2>
         <p><strong>Last Updated:</strong> November 9, 2025</p>
@@ -650,11 +654,8 @@
         <p style="margin-top:3rem; font-weight:600;">By using CENTRANOUNCEIT DEPTHUB, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.</p>
     </div>
 
-    <!-- ══════════════════════════════════════
-         FOOTER
-    ══════════════════════════════════════ -->
     <footer id="contact">
-        <div style="max-width:1200px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:3rem;">
+        <div style="max-width:1200px; margin:0 auto; display:grid; gap:3rem;">
             <div>
                 <h4 style="font-size:1.25rem; font-weight:700; margin-bottom:1rem; color:var(--accent);">CENTRANOUNCEIT DEPTHUB</h4>
                 <p class="footer-p">Professional centralized announcement system for modern departments and organizations.</p>
@@ -684,9 +685,6 @@
         </div>
     </footer>
 
-    <!-- ══════════════════════════════════════
-         SCRIPTS
-    ══════════════════════════════════════ -->
     <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         // ── Page navigation ──
         function hideAllPages() {
