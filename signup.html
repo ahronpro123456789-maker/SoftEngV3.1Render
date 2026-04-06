@@ -265,7 +265,7 @@
 
     <script>
     // ════════════════════════════════════════
-    // KEYS — all from keys.js
+    // KEYS — all from UI.js
     // ════════════════════════════════════════
     const supabaseClient = supabase.createClient(
         window.API_KEYS?.SUPABASE_URL      || '',
@@ -307,8 +307,10 @@
 
             // ── Init ──
             init() {
-                // EmailJS from keys.js
-                emailjs.init(window.API_KEYS?.EMAILJS_PUBLIC_KEY_SIGNUP || '');
+                // EmailJS — init with SIGNUP pool key #1
+                if (window.API_HELPERS) {
+                    emailjs.init(window.API_HELPERS.getEmailConfig('SIGNUP').PK);
+                }
                 initTranslationToggle();
             },
 
@@ -400,16 +402,29 @@
                     this.generatedOtp = this.generateOTP();
 
                     try {
-                        await emailjs.send(
-                            window.API_KEYS?.EMAILJS_SERVICE_ID_SIGNUP  || '',
-                            window.API_KEYS?.EMAILJS_TEMPLATE_ID_SIGNUP || '',
-                            {
-                                to_name:   `${this.savedFormData.firstName} ${this.savedFormData.lastName}`.trim(),
-                                to_email:  this.savedFormData.email,
-                                from_name: 'CentraNounceIT DeptHub',
-                                message:   this.generatedOtp
+                        // Round-robin EmailJS SIGNUP send with retry on 429/400
+                        const sendWithRotation = async (isRetry = false) => {
+                            const config = window.API_HELPERS.getEmailConfig('SIGNUP');
+                            try {
+                                await emailjs.send(
+                                    config.SID,
+                                    config.TID,
+                                    {
+                                        to_name:   `${this.savedFormData.firstName} ${this.savedFormData.lastName}`.trim(),
+                                        to_email:  this.savedFormData.email,
+                                        from_name: 'CentraNounceIT DeptHub',
+                                        message:   this.generatedOtp
+                                    }
+                                );
+                            } catch (err) {
+                                if (!isRetry && (err.status === 429 || err.status === 400)) {
+                                    window.API_HELPERS.rotateEmailConfig('SIGNUP');
+                                    return await sendWithRotation(true);
+                                }
+                                throw err;
                             }
-                        );
+                        };
+                        await sendWithRotation();
                         this.showMsg('Verification code sent to your email.', 'success');
                         this.otpSent = true;
                         await this.$nextTick();
