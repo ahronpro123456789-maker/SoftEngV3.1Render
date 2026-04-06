@@ -359,7 +359,7 @@
 
     <script>
     // ════════════════════════════════════════
-    // SUPABASE — from keys.js
+    // SUPABASE — from UI.js
     // ════════════════════════════════════════
     const supabaseClient = supabase.createClient(
         window.API_KEYS?.SUPABASE_URL      || '',
@@ -734,17 +734,22 @@
 You can help with: how to use the face detection feature, how to crop photos correctly, camera access troubleshooting, uploading avatars, and general campus questions.
 Current page: Edit Profile with Face Detection.
 Be concise, helpful, and professional.` };
-                    const apiKey = window.API_KEYS?.GROQ_API_KEY || '';
                     const msgs   = [sysMsg, ...this.messages.map(m=>({ role:m.role, content:m.content }))];
                     const models = ['llama-3.3-70b-versatile','llama-3.1-8b-instant','mixtral-8x7b-32768','llama3-8b-8192'];
                     let response = null, lastErr = '';
-                    for (const model of models) {
-                        try {
-                            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`}, body:JSON.stringify({ model, messages:msgs, temperature:0.7, max_tokens:1024 }) });
-                            if (res.ok) { response=res; break; }
-                            lastErr = await res.text();
-                            if (res.status!==429 && res.status!==413) break;
-                        } catch(fe) { lastErr=fe.message; }
+                    // 7-key round-robin rotation
+                    for (let keyAttempt = 0; keyAttempt < 7; keyAttempt++) {
+                        const apiKey = window.API_HELPERS.getGroqKey();
+                        for (const model of models) {
+                            try {
+                                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', { method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`}, body:JSON.stringify({ model, messages:msgs, temperature:0.7, max_tokens:1024 }) });
+                                if (res.ok) { response=res; break; }
+                                lastErr = await res.text();
+                                if (res.status!==429 && res.status!==413) break;
+                            } catch(fe) { lastErr=fe.message; }
+                        }
+                        if (response) break;
+                        if (lastErr.includes('429') || lastErr.includes('rate limit')) { window.API_HELPERS.rotateGroqKey(); } else { break; }
                     }
                     if (!response) { const wm=lastErr.match(/try again in (\d+m[\d.]+s|\d+s)/i); throw new Error(wm?`RATE_LIMITED:${wm[1]}`:'API_FAILED'); }
                     const data  = await response.json();
