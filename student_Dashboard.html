@@ -381,7 +381,7 @@
 
     <script>
     // ════════════════════════════════════════
-    // SUPABASE — from keys.js
+    // SUPABASE — from UI.js
     // ════════════════════════════════════════
     const supabaseUrl = window.API_KEYS?.SUPABASE_URL      || '';
     const supabaseKey = window.API_KEYS?.SUPABASE_ANON_KEY || '';
@@ -768,13 +768,11 @@ INSTRUCTIONS:
 - Be concise, helpful, and professional.`
                     };
 
-                    const apiKey = window.API_KEYS?.GROQ_API_KEY || '';
                     const msgs   = [sysMsg, ...this.messages.map(m=>({role:m.role,content:m.content}))];
-                    // Updated model list (removed llama3-8b-8192)
+                    // 7-key round-robin rotation
                     const models  = ['llama-3.3-70b-versatile','llama-3.1-8b-instant','mixtral-8x7b-32768'];
                     let response  = null, lastError = '';
 
-                    // Try up to 7 keys
                     for (let keyAttempt = 0; keyAttempt < 7; keyAttempt++) {
                         const apiKey = window.API_HELPERS.getGroqKey();
                         
@@ -791,12 +789,12 @@ INSTRUCTIONS:
                             } catch(fe) { lastError = fe.message; }
                         }
                         
-                        if (response) break; // Success! Exit key loop
+                        if (response) break;
                         
                         if (lastError.includes('429') || lastError.includes('rate limit')) {
                             window.API_HELPERS.rotateGroqKey();
                         } else {
-                            break; // Not a rate limit issue, stop trying
+                            break;
                         }
                     }
 
