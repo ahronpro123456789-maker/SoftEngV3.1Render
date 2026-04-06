@@ -584,14 +584,85 @@
         if (!str) return '';
         return str.replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/\n/g,' ').replace(/\r/g,' ').replace(/\t/g,' ').trim();
     }
+    function normalizeDate(raw) {
+        if (!raw || raw.trim() === '') return '';
+        const s = raw.trim();
+
+        // Already YYYY-MM-DD
+        if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+
+        // Try native Date parse (handles "November 9, 2025", "Nov 9 2025", "9/11/2025", etc.)
+        const d = new Date(s);
+        if (!isNaN(d.getTime())) {
+            const yyyy = d.getFullYear();
+            const mm   = String(d.getMonth() + 1).padStart(2, '0');
+            const dd   = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        // Handle ordinal dates: "November 9th, 2025", "9th of November 2025"
+        const ordinal = s.replace(/(\d+)(st|nd|rd|th)/gi, '$1');
+        const d2 = new Date(ordinal);
+        if (!isNaN(d2.getTime())) {
+            const yyyy = d2.getFullYear();
+            const mm   = String(d2.getMonth() + 1).padStart(2, '0');
+            const dd   = String(d2.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        // Could not parse — return empty so the field just stays blank
+        return '';
+    }
+
+    function normalizeAudience(raw) {
+        if (!raw) return 'all';
+        const s = raw.toLowerCase().trim();
+        if (s.includes('faculty') && s.includes('student')) return 'all';
+        if (s === 'all' || s.includes('everyone') || s.includes('all')) return 'all';
+        if (s.includes('faculty') || s.includes('teacher') || s.includes('staff')) return 'faculty';
+        if (s.includes('student')) return 'students';
+        return 'all';
+    }
+
+    function normalizeCategory(raw) {
+        if (!raw) return 'Notices';
+        const s = raw.toLowerCase().trim();
+        if (s.includes('emergency') || s.includes('urgent') || s.includes('alert')) return 'Emergency';
+        if (s.includes('deadline') || s.includes('due')) return 'Deadline';
+        if (s.includes('memo') || s.includes('memorandum')) return 'Memo';
+        if (s.includes('notice') || s.includes('announcement') || s.includes('general')) return 'Notices';
+        return 'Notices';
+    }
+
     function validateExtractedFields(fields) {
         const errors = [];
+
+        // ── target_audience: fuzzy normalize, no error thrown ──
         const validAudiences = ['all','faculty','students'];
-        if (fields.target_audience && !validAudiences.includes(fields.target_audience)) { errors.push(`Invalid target_audience`); fields.target_audience = 'all'; }
+        if (!validAudiences.includes(fields.target_audience)) {
+            fields.target_audience = normalizeAudience(fields.target_audience);
+        }
+
+        // ── category: fuzzy normalize, no error thrown ──
         const validCategories = ['Emergency','Memo','Notices','Deadline'];
-        if (fields.category && !validCategories.includes(fields.category)) { errors.push(`Invalid category`); fields.category = 'Notices'; }
-        if (fields.when && fields.when !== '' && !/^\d{4}-\d{2}-\d{2}$/.test(fields.when)) { errors.push(`Invalid date format`); fields.when = ''; }
-        if (fields.title && fields.title.length > 100) { fields.title = fields.title.substring(0,100); }
+        if (!validCategories.includes(fields.category)) {
+            fields.category = normalizeCategory(fields.category);
+        }
+
+        // ── when: try to parse any date format into YYYY-MM-DD ──
+        if (fields.when && fields.when !== '') {
+            const normalized = normalizeDate(fields.when);
+            if (normalized === '') {
+                errors.push(`Could not parse date: "${fields.when}" — please enter manually`);
+            }
+            fields.when = normalized; // either fixed YYYY-MM-DD or '' (blank, not broken)
+        }
+
+        // ── title: truncate if too long ──
+        if (fields.title && fields.title.length > 100) {
+            fields.title = fields.title.substring(0, 100);
+        }
+
         return { isValid: errors.length === 0, errors, fields };
     }
 
@@ -796,7 +867,13 @@ Create a CONCISE SUMMARY of the announcement.
 - 2-3 sentences maximum (40-60 words)
 
 ### 4. WHEN (YYYY-MM-DD or "")
-Parse dates. Return "" if no date found.
+You MUST convert ANY date found into YYYY-MM-DD format. Examples:
+- "November 9, 2025" → "2025-11-09"
+- "Nov 9" → "2025-11-09" (use anchor year)
+- "9th of November" → "2025-11-09"
+- "11/9/2025" → "2025-11-09"
+- No date found → ""
+NEVER return a date in any other format. ONLY return "" if truly no date exists in the text.
 
 ### 5. WHERE
 Complete location. Return "" if none.
@@ -858,6 +935,10 @@ Emergency > Deadline > Memo > Notices
             if (match) content = match[0];
             const parsed = JSON.parse(content);
             ['title','what','summary','when','where','why','target_audience','category'].forEach(f => { if (!(f in parsed)) parsed[f] = ''; });
+            // Pre-normalize date so validator has the best chance
+            if (parsed.when && parsed.when !== '') {
+                parsed.when = normalizeDate(parsed.when);
+            }
             return parsed;
         } catch (error) {
             if (error.name === 'AbortError') throw new GroqAPIError('Request timeout', 408);
