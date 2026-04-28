@@ -13,7 +13,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
-    <!-- Google Translate (once) -->
     <script type="text/javascript">
         function googleTranslateElementInit() {
             new google.translate.TranslateElement({
@@ -119,10 +118,8 @@
     </style>
 </head>
 
-<!-- ══════════ ROOT ALPINE COMPONENT ══════════ -->
 <body class="min-h-screen" x-data="profileApp()" x-init="init()">
 
-    <!-- ── Top bar ── -->
     <div class="flex items-center justify-between p-4 sm:p-6">
         <a href="faculty_Dashboard.html"
            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border font-semibold text-sm transition-all duration-300 hover:-translate-y-0.5"
@@ -138,7 +135,6 @@
         </button>
     </div>
 
-    <!-- ── Main form card ── -->
     <div class="flex items-start justify-center px-4 pb-32 pt-4">
         <div class="w-full max-w-[480px] rounded-2xl p-8 sm:p-10 flex flex-col gap-6 border shadow-[0_20px_60px_rgba(0,0,0,.5)]"
              style="background:var(--surface); border-color:var(--border);">
@@ -147,7 +143,6 @@
 
             <form @submit.prevent="submitForm()" autocomplete="off" class="flex flex-col gap-5">
 
-                <!-- Avatar section -->
                 <div class="flex items-start gap-5">
                     <div class="flex flex-col items-center gap-2 flex-shrink-0">
                         <img :src="avatarPreviewUrl"
@@ -172,7 +167,6 @@
                     </div>
                 </div>
 
-                <!-- Camera area -->
                 <div x-show="cameraOpen" class="flex flex-col gap-3">
                     <video id="cameraPreview" autoplay playsinline></video>
                     <div class="flex gap-3">
@@ -189,10 +183,9 @@
                     </div>
                 </div>
 
-                <!-- Text fields -->
                 <div class="flex flex-col gap-1">
                     <label class="text-sm font-semibold" style="color:var(--text);">Full Name *</label>
-                    <input type="text" x-model="fullName" placeholder="Enter your full name" required class="form-input">
+                    <input type="text" x-model="fullName" pattern="^[^0-9]+$" title="Name should not contain numbers" placeholder="Enter your full name" required class="form-input">
                 </div>
                 <div class="flex flex-col gap-1">
                     <label class="text-sm font-semibold" style="color:var(--text);">Email *</label>
@@ -206,7 +199,6 @@
                     </select>
                 </div>
 
-                <!-- Status message -->
                 <p x-show="statusMsg" x-text="statusMsg"
                    :class="statusIsError ? 'text-red-400' : 'text-green-400'"
                    class="text-sm font-medium text-center"></p>
@@ -220,7 +212,6 @@
         </div>
     </div>
 
-    <!-- ══ ERROR MODAL — No face detected ══ -->
     <div x-show="showErrorModal"
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0"
@@ -252,7 +243,6 @@
         </div>
     </div>
 
-    <!-- ══ CROP MODAL ══ -->
     <div x-show="showCropModal"
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0"
@@ -288,7 +278,6 @@
         </div>
     </div>
 
-    <!-- ══ CHATBOT (Alpine sub-component) — bottom-[160px] right-[30px] ══ -->
     <div x-data="initChatbot()" x-cloak>
         <button @click="isOpen = !isOpen"
             class="fixed bottom-[160px] right-[30px] w-[50px] h-[50px] rounded-full flex items-center justify-center text-black cursor-pointer z-[999] border-2 text-xl transition-all duration-300 hover:scale-110 active:scale-95"
@@ -348,7 +337,6 @@
         </div>
     </div>
 
-    <!-- ══ TRANSLATE — bottom-[30px] right-[30px] ══ -->
     <button id="translate-toggle-btn"
         class="notranslate fixed bottom-[30px] right-[30px] z-[999] w-[50px] h-[50px] rounded-full flex items-center justify-center cursor-pointer text-xl text-black"
         style="background:var(--accent); border:2px solid var(--accent); box-shadow:0 4px 12px rgba(159,232,112,.4); transition:all .3s;"
@@ -438,18 +426,30 @@
             async loadUserProfile() {
                 const lu = JSON.parse(localStorage.getItem('loggedInUser') || '{}');
                 if (!lu?.email) { window.location.href = 'faculty_login.html'; return; }
+                
                 try {
+                    // Removed .single() and added .limit(1) to prevent JSON coercion errors
                     const { data, error } = await supabaseClient.from('members')
                         .select('id,full_name,email,user_type,avatar_url')
-                        .eq('email', lu.email).single();
+                        .eq('email', lu.email)
+                        .limit(1);
+
                     if (error) throw error;
-                    this.currentUserProfile = data;
-                    this.fullName = data.full_name || '';
-                    this.email    = data.email     || '';
-                    this.userType = data.user_type  || 'Officer';
-                    if (data.avatar_url) {
-                        this.avatarPreviewUrl  = data.avatar_url;
-                        this.finalAvatarDataUrl = data.avatar_url;
+                    
+                    // Manually check if data exists to provide a clearer error message
+                    if (!data || data.length === 0) {
+                        throw new Error("No profile found for this email. Check your database records or RLS policies.");
+                    }
+
+                    const profile = data[0];
+                    this.currentUserProfile = profile;
+                    this.fullName = profile.full_name || '';
+                    this.email    = profile.email     || '';
+                    this.userType = profile.user_type || 'Officer';
+                    
+                    if (profile.avatar_url) {
+                        this.avatarPreviewUrl  = profile.avatar_url;
+                        this.finalAvatarDataUrl = profile.avatar_url;
                     }
                 } catch(err) {
                     this.showStatus('Failed to load profile: ' + err.message, true);
@@ -628,13 +628,37 @@
 
             // ── Form submit ──
             async submitForm() {
-                if (!this.fullName.trim() || !this.email.trim()) {
-                    this.showStatus('Please fill in all required fields.', true); return;
+                // Clear previous status messages
+                this.statusMsg = '';
+                this.statusIsError = false;
+
+                const trimmedName = this.fullName.trim();
+                const trimmedEmail = this.email.trim();
+
+                // 1. Basic empty field validation
+                if (!trimmedName || !trimmedEmail) {
+                    this.showStatus('Please fill in all required fields.', true); 
+                    return;
                 }
+
+                // 2. Name validation: Ensure no numbers are present
+                if (/\d/.test(trimmedName)) {
+                    this.showStatus('Error: Full Name cannot contain numbers.', true);
+                    return;
+                }
+
+                // 3. Email validation: Standard format check
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(trimmedEmail)) {
+                    this.showStatus('Error: Please enter a valid email address.', true);
+                    return;
+                }
+
                 if (!this.currentUserProfile) {
                     this.showStatus('Profile not loaded. Please refresh.', true); return;
                 }
-                this.saving = true; this.statusMsg = '';
+                
+                this.saving = true;
 
                 try {
                     let avatarUrl = this.currentUserProfile.avatar_url;
@@ -656,8 +680,8 @@
                     }
 
                     const { error } = await supabaseClient.from('members').update({
-                        full_name:  this.fullName.trim(),
-                        email:      this.email.trim(),
+                        full_name:  trimmedName,
+                        email:      trimmedEmail,
                         user_type:  this.userType,
                         avatar_url: avatarUrl
                     }).eq('id', this.currentUserProfile.id);
@@ -665,7 +689,7 @@
 
                     // Update localStorage
                     const lu = JSON.parse(localStorage.getItem('loggedInUser'));
-                    lu.email = this.email.trim(); lu.full_name = this.fullName.trim();
+                    lu.email = trimmedEmail; lu.full_name = trimmedName;
                     localStorage.setItem('loggedInUser', JSON.stringify(lu));
 
                     this.showStatus('✅ Profile updated successfully!', false);
