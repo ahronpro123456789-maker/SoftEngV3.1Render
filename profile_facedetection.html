@@ -13,7 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
-    <!-- Google Translate (once) -->
+    <!-- Google Translate -->
     <script type="text/javascript">
         function googleTranslateElementInit() {
             new google.translate.TranslateElement({
@@ -26,7 +26,6 @@
     <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
     <style>
-        /* ── CSS Variables: dark default ── */
         :root {
             --bg:         #000000;
             --surface:    #0f0f0f;
@@ -60,7 +59,6 @@
             transition: background-color .3s, color .3s;
         }
 
-        /* ── Form inputs ── */
         .form-input {
             width: 100%; padding: 12px 16px; border-radius: 12px;
             border: 1px solid var(--border);
@@ -70,18 +68,18 @@
         }
         .form-input:focus { border-color: var(--accent); background: var(--surface); box-shadow: 0 0 0 4px rgba(159,232,112,.2); }
         .form-input::placeholder { color: var(--text-muted); }
+        .form-input.input-error { border-color: #ef4444 !important; box-shadow: 0 0 0 3px rgba(239,68,68,.2) !important; }
+        .field-error { color: #f87171; font-size: .78rem; font-weight: 600; margin-top: 4px; display: flex; align-items: center; gap: 5px; }
 
-        /* ── Video ── */
         #cameraPreview {
             border-radius: 12px; border: 2px solid var(--accent);
             width: 100%; max-width: 360px; height: 270px;
             background: #000; object-fit: cover;
         }
 
-        /* ── Crop canvas ── */
         #cropCanvas { max-width: 100%; border-radius: 8px; border: 2px solid var(--accent); cursor: crosshair; display: block; }
 
-        /* ── Google Translate banner suppression ── */
+        /* Google Translate suppression */
         .goog-te-banner-frame,
         .goog-te-banner-frame.skiptranslate,
         .skiptranslate > iframe,
@@ -98,17 +96,14 @@
         #google_translate_element select, .goog-te-combo { background-color:var(--card) !important; color:var(--text) !important; border:1px solid var(--border) !important; border-radius:8px !important; padding:6px 10px !important; font-family:'Inter',sans-serif !important; font-size:.85rem !important; font-weight:600 !important; outline:none !important; cursor:pointer !important; }
         #google_translate_element select option, .goog-te-combo option { background-color:var(--card) !important; color:var(--text) !important; }
 
-        /* ── Translate dropdown ── */
         .translate-dropdown { position:fixed; bottom:90px; right:30px; background:var(--surface); border:2px solid var(--accent); border-radius:12px; padding:8px; box-shadow:0 8px 20px rgba(0,0,0,.2); z-index:998; }
 
-        /* ── Chatbot dots ── */
         .dot { animation:dotBounce 1.4s infinite ease-in-out both; }
         .dot:nth-child(1){animation-delay:-.32s;}
         .dot:nth-child(2){animation-delay:-.16s;}
         @keyframes dotBounce { 0%,80%,100%{transform:scale(0)} 40%{transform:scale(1)} }
         [x-cloak] { display:none !important; }
 
-        /* ── File input styling ── */
         input[type="file"]::file-selector-button {
             background: var(--accent); color: #000; border: none; border-radius: 8px;
             padding: 8px 16px; cursor: pointer; font-weight: 700; font-size: .9rem;
@@ -119,10 +114,9 @@
     </style>
 </head>
 
-<!-- ══════════ ROOT ALPINE COMPONENT ══════════ -->
 <body class="min-h-screen" x-data="profileApp()" x-init="init()">
 
-    <!-- ── Top bar ── -->
+    <!-- Top bar -->
     <div class="flex items-center justify-between p-4 sm:p-6">
         <a href="faculty_Dashboard.html"
            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border font-semibold text-sm transition-all duration-300 hover:-translate-y-0.5"
@@ -138,14 +132,14 @@
         </button>
     </div>
 
-    <!-- ── Main form card ── -->
+    <!-- Main form card -->
     <div class="flex items-start justify-center px-4 pb-32 pt-4">
         <div class="w-full max-w-[480px] rounded-2xl p-8 sm:p-10 flex flex-col gap-6 border shadow-[0_20px_60px_rgba(0,0,0,.5)]"
              style="background:var(--surface); border-color:var(--border);">
 
             <h2 class="text-3xl font-bold text-center" style="color:var(--accent);">Edit Profile</h2>
 
-            <form @submit.prevent="submitForm()" autocomplete="off" class="flex flex-col gap-5">
+            <form @submit.prevent="submitForm()" autocomplete="off" class="flex flex-col gap-5" novalidate>
 
                 <!-- Avatar section -->
                 <div class="flex items-start gap-5">
@@ -189,15 +183,35 @@
                     </div>
                 </div>
 
-                <!-- Text fields -->
+                <!-- Full Name -->
                 <div class="flex flex-col gap-1">
                     <label class="text-sm font-semibold" style="color:var(--text);">Full Name *</label>
-                    <input type="text" x-model="fullName" placeholder="Enter your full name" required class="form-input">
+                    <input type="text"
+                           x-model="fullName"
+                           @input="validateName()"
+                           @blur="validateName()"
+                           placeholder="Enter your full name"
+                           :class="errors.fullName ? 'form-input input-error' : 'form-input'">
+                    <p x-show="errors.fullName" x-text="errors.fullName" class="field-error">
+                        <i class="fas fa-circle-exclamation"></i>
+                    </p>
                 </div>
+
+                <!-- Email -->
                 <div class="flex flex-col gap-1">
                     <label class="text-sm font-semibold" style="color:var(--text);">Email *</label>
-                    <input type="email" x-model="email" placeholder="Enter your email" required class="form-input">
+                    <input type="email"
+                           x-model="email"
+                           @input="validateEmail()"
+                           @blur="validateEmail()"
+                           placeholder="Enter your email"
+                           :class="errors.email ? 'form-input input-error' : 'form-input'">
+                    <p x-show="errors.email" x-text="errors.email" class="field-error">
+                        <i class="fas fa-circle-exclamation"></i>
+                    </p>
                 </div>
+
+                <!-- User Type -->
                 <div class="flex flex-col gap-1">
                     <label class="text-sm font-semibold" style="color:var(--text);">User Type *</label>
                     <select x-model="userType" class="form-input">
@@ -211,7 +225,7 @@
                    :class="statusIsError ? 'text-red-400' : 'text-green-400'"
                    class="text-sm font-medium text-center"></p>
 
-                <button type="submit" :disabled="saving"
+                <button type="submit" :disabled="saving || hasErrors()"
                     class="w-full py-4 rounded-xl font-bold text-lg text-black transition-all duration-300 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                     style="background:linear-gradient(135deg,var(--accent),var(--accent-dark)); box-shadow:0 4px 12px var(--shadow-g);">
                     <span x-text="saving ? 'Saving...' : 'Save Changes'"></span>
@@ -220,7 +234,7 @@
         </div>
     </div>
 
-    <!-- ══ ERROR MODAL — No face detected ══ -->
+    <!-- ERROR MODAL — No face detected -->
     <div x-show="showErrorModal"
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0"
@@ -252,7 +266,7 @@
         </div>
     </div>
 
-    <!-- ══ CROP MODAL ══ -->
+    <!-- CROP MODAL -->
     <div x-show="showCropModal"
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0"
@@ -288,7 +302,7 @@
         </div>
     </div>
 
-    <!-- ══ CHATBOT (Alpine sub-component) — bottom-[160px] right-[30px] ══ -->
+    <!-- CHATBOT -->
     <div x-data="initChatbot()" x-cloak>
         <button @click="isOpen = !isOpen"
             class="fixed bottom-[160px] right-[30px] w-[50px] h-[50px] rounded-full flex items-center justify-center text-black cursor-pointer z-[999] border-2 text-xl transition-all duration-300 hover:scale-110 active:scale-95"
@@ -348,7 +362,7 @@
         </div>
     </div>
 
-    <!-- ══ TRANSLATE — bottom-[30px] right-[30px] ══ -->
+    <!-- TRANSLATE -->
     <button id="translate-toggle-btn"
         class="notranslate fixed bottom-[30px] right-[30px] z-[999] w-[50px] h-[50px] rounded-full flex items-center justify-center cursor-pointer text-xl text-black"
         style="background:var(--accent); border:2px solid var(--accent); box-shadow:0 4px 12px rgba(159,232,112,.4); transition:all .3s;"
@@ -358,9 +372,6 @@
     <div id="google_translate_element" class="notranslate translate-dropdown" translate="no" style="display:none;"></div>
 
     <script>
-    // ════════════════════════════════════════
-    // SUPABASE — from UI.js
-    // ════════════════════════════════════════
     const supabaseClient = supabase.createClient(
         window.API_KEYS?.SUPABASE_URL      || '',
         window.API_KEYS?.SUPABASE_ANON_KEY || ''
@@ -369,11 +380,13 @@
     const DEFAULT_AVATAR = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="82" height="82"%3E%3Ccircle cx="41" cy="41" r="40" fill="%231a1a1a" stroke="%239FE870" stroke-width="2"/%3E%3Ctext x="41" y="50" font-size="24" fill="%239FE870" text-anchor="middle" font-family="Arial"%3E%3F%3C/text%3E%3C/svg%3E';
 
     // ════════════════════════════════════════
-    // MAIN ALPINE COMPONENT
+    // VALIDATION HELPERS
     // ════════════════════════════════════════
+    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    const NAME_HAS_NUMBER = /\d/;
+
     function profileApp() {
         return {
-            // ── Reactive state ──
             isDark:          true,
             fullName:        '',
             email:           '',
@@ -386,34 +399,30 @@
             statusMsg:       '',
             statusIsError:   false,
 
-            // Camera state
+            // ── Inline field errors ──
+            errors: {
+                fullName: '',
+                email:    ''
+            },
+
             cameraOpen:      false,
             stream:          null,
-
-            // Crop modal state
             showCropModal:   false,
             cropImageData:   null,
             cropStartX: 0, cropStartY: 0,
             cropEndX: 0,   cropEndY: 0,
             isDragging:      false,
-
-            // Error modal state
             showErrorModal:  false,
             errorImageUrl:   '',
-
-            // Face API
             modelsLoaded:    false,
 
-            // ── Init ──
             async init() {
                 this.loadTheme();
                 this.checkAuth();
                 await this.loadUserProfile();
                 this.setupCropCanvas();
-                // Translate is initialised via DOMContentLoaded below (outside Alpine)
             },
 
-            // ── Theme ──
             loadTheme() {
                 const saved = localStorage.getItem('theme') || 'dark';
                 this.isDark = saved === 'dark';
@@ -426,7 +435,6 @@
                 setTimeout(applyTranslateColors, 50);
             },
 
-            // ── Auth ──
             checkAuth() {
                 const lu = localStorage.getItem('loggedInUser');
                 if (!lu) { window.location.href = 'faculty_login.html'; return; }
@@ -434,7 +442,6 @@
                 catch { localStorage.removeItem('loggedInUser'); window.location.href = 'faculty_login.html'; }
             },
 
-            // ── Load profile ──
             async loadUserProfile() {
                 const lu = JSON.parse(localStorage.getItem('loggedInUser') || '{}');
                 if (!lu?.email) { window.location.href = 'faculty_login.html'; return; }
@@ -456,13 +463,59 @@
                 }
             },
 
-            // ── Status helper ──
             showStatus(msg, isError = false) {
                 this.statusMsg = msg; this.statusIsError = isError;
                 if (!isError) setTimeout(() => { this.statusMsg = ''; }, 4000);
             },
 
-            // ── Face API ──
+            // ════════════════════════════════════════
+            // VALIDATION METHODS
+            // ════════════════════════════════════════
+
+            validateName() {
+                const name = this.fullName.trim();
+                if (!name) {
+                    this.errors.fullName = 'Full name is required.';
+                } else if (NAME_HAS_NUMBER.test(name)) {
+                    this.errors.fullName = 'Name must not contain numbers.';
+                } else if (name.length < 2) {
+                    this.errors.fullName = 'Name is too short.';
+                } else if (name.length > 100) {
+                    this.errors.fullName = 'Name must not exceed 100 characters.';
+                } else {
+                    this.errors.fullName = '';
+                }
+                return !this.errors.fullName;
+            },
+
+            validateEmail() {
+                const em = this.email.trim();
+                if (!em) {
+                    this.errors.email = 'Email is required.';
+                } else if (!EMAIL_REGEX.test(em)) {
+                    this.errors.email = 'Please enter a valid email address.';
+                } else {
+                    this.errors.email = '';
+                }
+                return !this.errors.email;
+            },
+
+            hasErrors() {
+                // Used to disable submit button reactively
+                return !!(this.errors.fullName || this.errors.email
+                    || !this.fullName.trim() || !this.email.trim());
+            },
+
+            // Run all validations and return true if all pass
+            runAllValidations() {
+                const nameOk  = this.validateName();
+                const emailOk = this.validateEmail();
+                return nameOk && emailOk;
+            },
+
+            // ════════════════════════════════════════
+            // FACE API
+            // ════════════════════════════════════════
             async loadFaceApiModels() {
                 if (!this.modelsLoaded) {
                     await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model');
@@ -470,7 +523,6 @@
                 }
             },
 
-            // ── File selected ──
             onFileSelected(e) {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -480,7 +532,6 @@
                 e.target.value = '';
             },
 
-            // ── Camera ──
             async openCamera() {
                 await this.loadFaceApiModels();
                 this.cameraOpen = true;
@@ -513,7 +564,6 @@
                 await this.openCamera();
             },
 
-            // ── Crop modal ──
             openCropModal(imageUrl) {
                 const img = new Image();
                 img.onload = () => {
@@ -585,17 +635,14 @@
                 };
             },
 
-            // ── Crop canvas drag ── (set up once after init)
             setupCropCanvas() {
                 this.$nextTick(() => {
                     const canvas = document.getElementById('cropCanvas');
                     if (!canvas) return;
-
                     const getPos = (e, rect) => {
                         const src = e.touches ? e.touches[0] : e;
                         return { x: src.clientX - rect.left, y: src.clientY - rect.top };
                     };
-
                     const onStart = e => {
                         if (!this.showCropModal) return;
                         e.preventDefault();
@@ -616,7 +663,6 @@
                         if (this.cropStartX > this.cropEndX) [this.cropStartX, this.cropEndX] = [this.cropEndX, this.cropStartX];
                         if (this.cropStartY > this.cropEndY) [this.cropStartY, this.cropEndY] = [this.cropEndY, this.cropStartY];
                     };
-
                     canvas.addEventListener('mousedown',  onStart);
                     canvas.addEventListener('mousemove',  onMove);
                     canvas.addEventListener('mouseup',    onEnd);
@@ -626,20 +672,48 @@
                 });
             },
 
-            // ── Form submit ──
+            // ════════════════════════════════════════
+            // FORM SUBMIT
+            // ════════════════════════════════════════
             async submitForm() {
-                if (!this.fullName.trim() || !this.email.trim()) {
-                    this.showStatus('Please fill in all required fields.', true); return;
+                // Run all client-side validations first
+                if (!this.runAllValidations()) {
+                    this.showStatus('Please fix the errors above before saving.', true);
+                    return;
                 }
+
                 if (!this.currentUserProfile) {
-                    this.showStatus('Profile not loaded. Please refresh.', true); return;
+                    this.showStatus('Profile not loaded. Please refresh the page.', true);
+                    return;
                 }
-                this.saving = true; this.statusMsg = '';
+
+                this.saving = true;
+                this.statusMsg = '';
 
                 try {
-                    let avatarUrl = this.currentUserProfile.avatar_url;
+                    const newEmail = this.email.trim();
+                    const oldEmail = this.currentUserProfile.email;
 
-                    // Upload new avatar only if face was detected and it's a new image
+                    // ── Email uniqueness check (only if email changed) ──
+                    if (newEmail.toLowerCase() !== oldEmail.toLowerCase()) {
+                        const { data: existing, error: lookupErr } = await supabaseClient
+                            .from('members')
+                            .select('id')
+                            .eq('email', newEmail)
+                            .neq('id', this.currentUserProfile.id)
+                            .maybeSingle();
+
+                        if (lookupErr) throw new Error('Could not verify email: ' + lookupErr.message);
+                        if (existing) {
+                            this.errors.email = 'This email is already in use by another account.';
+                            this.showStatus('Email address is already taken.', true);
+                            this.saving = false;
+                            return;
+                        }
+                    }
+
+                    // ── Avatar upload ──
+                    let avatarUrl = this.currentUserProfile.avatar_url;
                     const hasNew = this.faceDetected
                         && this.finalAvatarDataUrl !== DEFAULT_AVATAR
                         && this.finalAvatarDataUrl !== this.currentUserProfile.avatar_url;
@@ -655,17 +729,19 @@
                         avatarUrl = urlData?.publicUrl || avatarUrl;
                     }
 
+                    // ── DB update ──
                     const { error } = await supabaseClient.from('members').update({
                         full_name:  this.fullName.trim(),
-                        email:      this.email.trim(),
+                        email:      newEmail,
                         user_type:  this.userType,
                         avatar_url: avatarUrl
                     }).eq('id', this.currentUserProfile.id);
                     if (error) throw new Error('Profile update failed: ' + error.message);
 
-                    // Update localStorage
+                    // ── Update localStorage ──
                     const lu = JSON.parse(localStorage.getItem('loggedInUser'));
-                    lu.email = this.email.trim(); lu.full_name = this.fullName.trim();
+                    lu.email     = newEmail;
+                    lu.full_name = this.fullName.trim();
                     localStorage.setItem('loggedInUser', JSON.stringify(lu));
 
                     this.showStatus('✅ Profile updated successfully!', false);
@@ -707,7 +783,6 @@
         if (!btn || !dd) return;
         btn.addEventListener('click', e => { e.stopPropagation(); const vis = dd.style.display==='block'; dd.style.display = vis?'none':'block'; if(!vis) applyTranslateColors(); });
         document.addEventListener('click', e => { if (!e.target.closest('#translate-toggle-btn') && !e.target.closest('#google_translate_element')) dd.style.display='none'; });
-        // Re-apply colors when theme button is clicked
         const themeBtn = document.getElementById('theme-toggle-btn');
         if (themeBtn) themeBtn.addEventListener('click', () => setTimeout(applyTranslateColors, 50));
         new MutationObserver(applyTranslateColors).observe(dd, { childList:true, subtree:true, attributes:true, attributeFilter:['style'] });
@@ -716,7 +791,7 @@
     }
 
     // ════════════════════════════════════════
-    // CHATBOT — separate Alpine sub-component
+    // CHATBOT
     // ════════════════════════════════════════
     function initChatbot() {
         return {
@@ -737,7 +812,6 @@ Be concise, helpful, and professional.` };
                     const msgs   = [sysMsg, ...this.messages.map(m=>({ role:m.role, content:m.content }))];
                     const models = ['llama-3.3-70b-versatile','llama-3.1-8b-instant','mixtral-8x7b-32768','llama3-8b-8192'];
                     let response = null, lastErr = '';
-                    // 7-key round-robin rotation
                     for (let keyAttempt = 0; keyAttempt < 7; keyAttempt++) {
                         const apiKey = window.API_HELPERS.getGroqKey();
                         for (const model of models) {
@@ -768,7 +842,6 @@ Be concise, helpful, and professional.` };
         };
     }
 
-    // ── Call translate OUTSIDE Alpine so the DOM is guaranteed ready ──
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initTranslationToggle);
     } else {
